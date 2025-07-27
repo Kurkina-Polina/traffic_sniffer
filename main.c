@@ -18,15 +18,56 @@
 #include <errno.h>
 
 
+void print_mac_addr(uint8_t const* const addr) {
+    printf("%d:%d:%d:%d:%d:%d \n", addr[0], addr[1], addr[2],addr[3],addr[4],addr[5]);
+}
+
+
+void  tcp_header(char* buffer, int buflen, int iphdrlen){
+    struct tcphdr *tcp = (struct tcphdr*)(buffer + iphdrlen + sizeof(struct ethhdr));
+    printf("TCP Header \n");
+    printf("Source TCP         : %u\n", ntohs(tcp->th_sport));
+    printf("Destination TCP    : %u\n", ntohs(tcp->th_dport));
+    printf("\n\n ");
+
+}
+
+void ip_header(char* buffer, int buflen){
+    struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
+    printf("IP Header \n");
+    printf("Version %u\n", ip_head->ip_v);
+    printf("header length %u\n", ip_head->ip_hl);
+    printf("Type of service. %u\n", ip_head->ip_tos);
+    printf("protocol %u\n", ip_head->ip_p);
+    printf("Source IP         : %s\n", inet_ntoa(ip_head->ip_src));
+    printf("Destination IP    : %s\n",inet_ntoa(ip_head->ip_dst));
+    
+
+    if (ip_head->ip_p == 6){
+        tcp_header(buffer, buflen, ip_head->ip_hl);
+    }
+    else{
+        printf("\n\n ");
+    }
+}
+
 #define MAX_PORTS 65536
 static volatile int keepRunning = 1;
 
 void data_process(char* buffer, int buflen){
     printf("Ethernet Header \n");
-    printf("dest MAC %hhX:%hhX:%hhX:%hhX:%hhX:%hhX\n", buffer[0], buffer[1],buffer[2],buffer[3],buffer[4],buffer[5]);
-    printf("src MAC %hhX:%hhX:%hhX:%hhX:%hhX:%hhX \n", buffer[6], buffer[7],buffer[8],buffer[9],buffer[10],buffer[11]);
-    printf("Ether type %hhX %hhX\n", buffer[12], buffer[13]);
     
+    struct ether_header const* const ether = (struct ether_header const*)buffer;
+    printf("dest Mac ");
+    print_mac_addr(ether->ether_dhost);
+    printf("sourse Mac ");
+    print_mac_addr(ether->ether_shost);
+
+    printf("Ether type %u\n", ether->ether_type);
+
+    if (ether->ether_type == 8){
+        ip_header(buffer, buflen);
+    }
     
 }
 
