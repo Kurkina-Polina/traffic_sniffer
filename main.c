@@ -493,7 +493,7 @@ bool check_udp(char const* buffer, size_t bufflen, uint16_t udp_port, bool is_sr
 }
 
 /**
- * Check if the packet is suit for any filters/
+ * Check if the packet is suit for any filters.
  *
  * @param buffer              full buffer, received from client
  * @param bufflen             size of buffer
@@ -573,17 +573,13 @@ on_fail:
 }
 
 /**
- * Check if the packet is suit for any filters/
+ * Make message about all statistics
  *
- * @param buffer              full buffer, received from client
- * @param bufflen             size of buffer
- * @param filters             all setted filters
- * @param filters_len         count of setted filters
+ * @param filters              all setted filters
+ * @param filters_len          count of setted filters
+ * @param message              statistics by every filter
+ * @param message_sz           size of message of statistics
  *
- * @sa                        check_mac check_ipv4 check_ip_protocol
- *                            check_ether_type check_tcp check_udp
- *
- * @todo                      add checks for vlan id and ipv6
  */
 static void get_statistics(struct filter* filters, size_t filters_len, char* message, size_t message_sz)
 {
@@ -601,7 +597,13 @@ static void get_statistics(struct filter* filters, size_t filters_len, char* mes
     }
 }
 
-
+/**
+ * Parse MAC address from string to struct of ether header.
+ *
+ * @param str                  string contain mac address
+ * @param mac[out]             parsed mac address
+ *
+ */
 static bool parse_mac(const char* str, struct ether_addr* mac)
 {
     return sscanf(str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
@@ -610,21 +612,25 @@ static bool parse_mac(const char* str, struct ether_addr* mac)
                  &mac->ether_addr_octet[4], &mac->ether_addr_octet[5]) == 6;
 }
 
+/**
+ * Splits the string into tokens and every token compare with keys.
+ * Every key set in filers massive and set the flag indicating
+ * what key is set.
+ *
+ * @param buff                 string contain mac address
+ * @param message[out]         message about the result of work
+ * @param message_sz[in]       message size that have been set
+ *
+ * @todo                       add vlan_id, ipv6, interface
+ *
+ * @reruen filter              new one filter
+ *
+ */
 static struct filter add_filter(char* buff, char* message, size_t message_sz)
 {
-    char* end = strchr(buff, '\r');
-    //FIXME:
-    if (end)
-    {
-        *end = 0;
-    } else
-    {
-        end = strchr(buff, '\n');
-        if (end)
-            *end = 0;
-    }
     struct filter new_filter = {0};
-
+    buff[strcspn(buff, "\n")] = '\0';
+    
     char* token = strtok(buff + strlen("add"), " ");
     if (!token)
     {
