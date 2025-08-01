@@ -724,37 +724,37 @@ char const* delete_filter(char* buff, struct filter* filters,  int* filters_len)
 void input_from_client(int sock_client, struct filter* filters,  int* filters_len)
 {
     char message_reseive[MAX_MESSAGE] = {};
-    read(sock_client, message_reseive, sizeof(message_reseive));
+    static char message_send[MAX_MESSAGE];
 
+    read(sock_client, message_reseive, sizeof(message_reseive));
     printf("From client: %s\t", message_reseive);
-    static char message[MAX_MESSAGE];
 
     if (strncmp("add", message_reseive, 3) == 0)
     {
-        filters[*filters_len] = add_filter(message_reseive, message, sizeof(message));
+        filters[*filters_len] = add_filter(message_reseive, message_send, sizeof(message_send));
         *filters_len +=1;
     }
 
     else if (strncmp( "del", message_reseive, 3) == 0)
     {
-        strcpy(message, delete_filter(message_reseive, filters, filters_len));
+        strcpy(message_send, delete_filter(message_reseive, filters, filters_len));
     }
 
     else if (strncmp("print", message_reseive,  5) == 0)
     {
-        get_statistics(filters, *filters_len, message, sizeof(message));
+        get_statistics(filters, *filters_len, message_send, sizeof(message_send));
     }
-    else if (strncmp("exit", buff,  4) == 0)
+    else if (strncmp("exit", message_reseive,  4) == 0)
     {
-        strcpy(message, "exiting\n");
+        strcpy(message_send, "exiting\n");
         keep_running = 0;
     }
     else
     {
-        strcpy(message, get_help_message());
+        strcpy(message_send, get_help_message());
     }
 
-    send(sock_client, message, strlen(message), MSG_NOSIGNAL);
+    send(sock_client, message_send, strlen(message_send), MSG_NOSIGNAL);
 }
 
 
