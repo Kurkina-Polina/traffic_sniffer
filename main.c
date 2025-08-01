@@ -1,6 +1,5 @@
 #include<stdio.h>
 #include <stdlib.h>
-#include<malloc.h>
 #include<string.h>
 #include<signal.h>
 #include<stdbool.h>
@@ -31,13 +30,15 @@
 /* Temporary silution to start server on that port. */
 #define PORT 8080
 
+#define IHL_WORD_LEN 4
+
 /* Temporary function to print progress of work. */
 #define DPRINTF(...) printf(__VA_ARGS__)
 
 /* Flag for end program. */
 static volatile bool keep_running = 1;
 /* Flag to indicate start new connection with client or not. */
-bool is_already_established = 0;
+static bool is_already_established = 0;
 
 /* Bitmask flags indicating which filter types are active. */
 struct filter_flag
@@ -57,7 +58,7 @@ struct filter_flag
     bool src_udp_flag;
 };
 
-/* Filter cointains or not keys. */
+/* Filter contains or not keys. */
 struct filter
 {
     uint16_t vlan_id;
@@ -80,12 +81,11 @@ struct filter
 };
 
 /**
- * Chage message that will be sent to client.
- * @param message    info how to use this program.
+ *  Returns message that contains API info that client may use
  */
-void print_help(char** message)
+static char const* get_help_message()
 {
-    *message = "Usage: "
+    return "Usage: "
     "add <key> <value>  <key> <value> - add filter\n"
     "print - print statics on filters\n"
     "exit - to close connection\n"
@@ -114,7 +114,7 @@ void print_help(char** message)
  *
  * @param addr    MAC address in uint8_t
  */
-void print_mac_addr(uint8_t const* const addr)
+static void print_mac_addr(uint8_t const* const addr)
 {
     printf("%d:%d:%d:%d:%d:%d \n", addr[0], addr[1], addr[2],addr[3],addr[4],addr[5]);
 }
@@ -122,7 +122,7 @@ void print_mac_addr(uint8_t const* const addr)
 /**
  * Hendler for interrupt by SIGINT.
  */
-void handler()
+static void handler(int)
 {
     keep_running = 0;
 }
@@ -133,7 +133,7 @@ void handler()
  * @param data    pointer of start data
  * @param size    size of data
  */
-void print_payload(char const* data, size_t size)
+static void print_payload(char const* data, size_t size)
 {
     if (size <=0 )
     {
@@ -186,19 +186,18 @@ void print_payload(char const* data, size_t size)
  *
  * @sa print_payload
  */
-void  tcp_header(char* buffer, int bufflen, int iphdrlen)
+static void tcp_header(char const* buffer, size_t bufflen, size_t iphdrlen)
 {
-    struct tcphdr *tcp = (struct tcphdr*)(buffer + iphdrlen + sizeof(struct ethhdr));
+    struct tcphdr const * tcp = (struct tcphdr const*)(buffer + iphdrlen + sizeof(struct ethhdr));
     printf("tcp Header \n");
     printf("Source tcp         :   %u\n", ntohs(tcp->th_sport));
     printf("Destination tcp    :   %u\n", ntohs(tcp->th_dport));
-    char* tcp_data = buffer + sizeof(struct ethhdr) + iphdrlen + tcp->th_off*4;
+    char const* tcp_data = buffer + sizeof(struct ethhdr) + iphdrlen + tcp->th_off*4;
     size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + tcp->th_off*4);
     printf("tcp payload        :   %ld bytes\n",  message_len);
     print_payload(tcp_data, message_len);
     printf("\n###########################################################");
     printf("\n\n ");
-
 }
 
 /**
@@ -210,14 +209,15 @@ void  tcp_header(char* buffer, int bufflen, int iphdrlen)
  *
  * @sa print_payload
  */
-void udp_header(char* buffer, int bufflen, int iphdrlen)
+void udp_header(char const* buffer, size_t bufflen, size_t iphdrlen)
 {
-    struct udphdr *udp = (struct udphdr*)(buffer + iphdrlen + sizeof(struct ethhdr));
+    static size_t const udp_header_len = 8;
+    struct udphdr const *udp = (struct udphdr const*)(buffer + iphdrlen + sizeof(struct ethhdr));
     printf("udp Header \n");
     printf("Source udp         :   %u\n", ntohs(udp->uh_sport));
     printf("Destination udp    :   %u\n", ntohs(udp->uh_dport));
-    char* udp_data = buffer + sizeof(struct ethhdr) + iphdrlen + 8;
-    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + 8);
+    char const* udp_data = buffer + sizeof(struct ethhdr) + iphdrlen + udp_header_len;
+    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + udp_header_len);
     printf("udp payload        :   %ld bytes\n",  message_len);
     print_payload(udp_data, message_len);
     printf("\n###########################################################");
@@ -233,8 +233,12 @@ void udp_header(char* buffer, int bufflen, int iphdrlen)
  *
  * @sa tcp_header udp_header
  */
-void ip_header(char* buffer, int bufflen)
+void ip_header(char const* buffer, size_t bufflen)
 {
+    enum {
+        IP_TCP_PROTOCOL = 6,
+        IP_UDP_PROTOCOL = 17,
+    };
     struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
     printf("ip Header\n");
     printf("Version           :    %u\n", ip_head->ip_v);
@@ -244,17 +248,15 @@ void ip_header(char* buffer, int bufflen)
     printf("Source ip         :    %s\n", inet_ntoa(ip_head->ip_src));
     printf("Destination ip    :    %s\n",inet_ntoa(ip_head->ip_dst));
 
-    if (ip_head->ip_p == 6)
-    {
-        tcp_header(buffer, bufflen, ip_head->ip_hl*4);
-    }
-    else if(ip_head->ip_p == 17)
-    {
-        udp_header(buffer, bufflen, ip_head->ip_hl*4);
-    }
-    else
-    {
-        printf("\n\n ");
+    switch(ip_head->ip_p) {
+        case IP_TCP_PROTOCOL:
+            tcp_header(buffer, bufflen, ip_head->ip_hl*IHL_WORD_LEN);
+            break;
+        case IP_UDP_PROTOCOL:
+            udp_header(buffer, bufflen, ip_head->ip_hl*IHL_WORD_LEN);
+            break;
+        default:
+            printf("\n\n");
     }
 }
 
@@ -266,7 +268,7 @@ void ip_header(char* buffer, int bufflen)
  *
  * @sa ip_header
  */
-void print_packet(char* buffer, int bufflen)
+void print_packet(char const* buffer, size_t bufflen)
 {
     printf("Ethernet Header \n");
     struct ether_header const* const ether = (struct ether_header const*)buffer;
@@ -277,14 +279,17 @@ void print_packet(char* buffer, int bufflen)
 
     printf("Ether type        :    %u\n", ntohs(ether->ether_type));
 
-    if (ntohs(ether->ether_type) == 0x0800)
-    {
-        ip_header(buffer, bufflen);
+    switch(ntohs(ether->ether_type)) {
+        case ETHERTYPE_IP:
+            ip_header(buffer, bufflen);
+            break;
+        default:
+            break;
     }
 }
 
 /**
- * Check mac adderesses are same or not.
+ * Compare mac addresses.
  *
  * @param buffer              full buffer, received from client
  * @param bufflen             size of buffer
@@ -292,19 +297,11 @@ void print_packet(char* buffer, int bufflen)
  *
  * @return                    true if addresses are same and false else
  */
-bool check_mac(char* buffer, int bufflen, struct ether_addr mac)
+static bool check_mac(char const* buffer, size_t bufflen, struct ether_addr mac)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
     uint8_t const* const addr = ether->ether_shost;
-    for (int i =0; i<6; i++)
-    {
-        if (mac.ether_addr_octet[i]!=addr[i])
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return !memcmp(addr, mac.ether_addr_octet, ETHER_ADDR_LEN);
 }
 
 /**
@@ -316,7 +313,7 @@ bool check_mac(char* buffer, int bufflen, struct ether_addr mac)
  *
  * @return                    true if addresses are same and false else
  */
-bool check_ether_type(char* buffer, int bufflen, uint16_t ether_type)
+bool check_ether_type(char const* buffer, int bufflen, uint16_t ether_type)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
     uint16_t ether_data = ether->ether_type;
@@ -337,10 +334,10 @@ bool check_ether_type(char* buffer, int bufflen, uint16_t ether_type)
  *
  * @return                    true if addresses are same and false else
  */
-bool check_ipv4(char* buffer, int bufflen,  struct in_addr ipv, int is_scr)
+static bool check_ipv4(char const* buffer, size_t bufflen,  struct in_addr ipv, bool is_scr)
 {
+    // FIXME: check me
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
     if (ether->ether_type == 8)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
@@ -353,7 +350,7 @@ bool check_ipv4(char* buffer, int bufflen,  struct in_addr ipv, int is_scr)
             }
         }
         else{
-            if(ip_head->ip_src.s_addr == ipv.s_addr)
+            if(ip_head->ip_dst.s_addr == ipv.s_addr)
             {
                 DPRINTF("it is %s=%s\n", inet_ntoa(ip_head->ip_src),  inet_ntoa(ipv));
                 return true;
@@ -363,7 +360,6 @@ bool check_ipv4(char* buffer, int bufflen,  struct in_addr ipv, int is_scr)
     else
     {
         DPRINTF("it is not ipv4\n");
-        return false;
     }
     return false;
 }
@@ -379,10 +375,10 @@ bool check_ipv4(char* buffer, int bufflen,  struct in_addr ipv, int is_scr)
  *
  * @return                    true if protocols are same and false else
  */
-bool check_ip_protocol(char* buffer, int bufflen, uint8_t ip_protocol)
+static bool check_ip_protocol(char const* buffer, size_t bufflen, uint8_t ip_protocol)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    if (ether->ether_type == 8)
+    if (ether->ether_type == ETHERTYPE_IP)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
         if( ip_head->ip_p == ip_protocol)
@@ -391,7 +387,7 @@ bool check_ip_protocol(char* buffer, int bufflen, uint8_t ip_protocol)
             return true;
         }
     }
-    else if(ether->ether_type == 0x86DD)
+    else if(ether->ether_type == ETHERTYPE_IPV6)
     {
         //TBD
         return false;
@@ -411,13 +407,13 @@ bool check_ip_protocol(char* buffer, int bufflen, uint8_t ip_protocol)
  *
  * @return                    true if ports are same and false else
  */
-bool check_tcp(char* buffer, int bufflen, uint16_t tcp_port, bool is_src)
+static bool check_tcp(char const* buffer, size_t bufflen, uint16_t tcp_port, bool is_src)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    if (ether->ether_type == 8)
+    if (ether->ether_type == ETHERTYPE_IP)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
-        if (ip_head->ip_p == 6)
+        if (ip_head->ip_p == 6) //FIXME: dont use magic numbers
         {
             struct tcphdr *tcp = (struct tcphdr*)(buffer + ip_head->ip_hl*4 + sizeof(struct ethhdr));
             if (is_src && tcp->th_sport == tcp_port)
@@ -441,7 +437,7 @@ bool check_tcp(char* buffer, int bufflen, uint16_t tcp_port, bool is_src)
             return false;
         }
     }
-    else if(ether->ether_type == 0x86DD)
+    else if(ether->ether_type == ETHERTYPE_IPV6)
     {
         /* It is ipv6. Will be done later*/
         return false;
@@ -460,10 +456,10 @@ bool check_tcp(char* buffer, int bufflen, uint16_t tcp_port, bool is_src)
  *
  * @return                    true if ports are same and false else
  */
-bool check_udp(char* buffer, int bufflen, unsigned short int udp_port, bool is_src)
+bool check_udp(char const* buffer, size_t bufflen, uint16_t udp_port, bool is_src)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    if (ether->ether_type == 8)
+    if (ether->ether_type == 8) //FIXME:
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
         if (ip_head->ip_p == 17)
@@ -492,7 +488,7 @@ bool check_udp(char* buffer, int bufflen, unsigned short int udp_port, bool is_s
             return false;
         }
     }
-    else if(ether->ether_type == 0x86DD)
+    else if(ether->ether_type == 0x86DD) //FIXME:
     {
         /* It is ipv6. Will be done later*/
         return false;
@@ -513,94 +509,91 @@ bool check_udp(char* buffer, int bufflen, unsigned short int udp_port, bool is_s
  *
  * @todo                      add checks for vlan id and ipv6
  */
-void data_process(char* buffer, int bufflen,
-                  struct filter* filters, int filters_len)
+static void data_process(char const* buffer, size_t bufflen,
+                  struct filter* filters, size_t filters_len)
 {
-    for (int i=0; i<filters_len; i++)
+    for (size_t i = 0; i < filters_len; i++)
     {
-        /* Flag packet suits for that filter. */
-        int is_suitable = 1;
-
         if(filters[i].flags.dst_mac_flag)
         {
-            is_suitable &= check_mac(buffer, bufflen, filters[i].dst_mac);
+            if (!check_mac(buffer, bufflen, filters[i].dst_mac))
+                goto on_fail;
         }
         if(filters[i].flags.src_mac_flag)
         {
-            is_suitable &= check_mac(buffer, bufflen, filters[i].src_mac);
+            if (!check_mac(buffer, bufflen, filters[i].src_mac))
+                goto on_fail;
         }
         if(filters[i].flags.ether_type_flag)
         {
-            is_suitable &=  check_ether_type(buffer, bufflen, filters[i].ether_type);
+            if (!check_ether_type(buffer, bufflen, filters[i].ether_type))
+                goto on_fail;
         }
         if(filters[i].flags.dst_ipv4_flag)
         {
-            is_suitable &= check_ipv4(buffer, bufflen, filters[i].dst_ipv4, false);
+            if (!check_ipv4(buffer, bufflen, filters[i].dst_ipv4, false))
+                goto on_fail;
         }
         if(filters[i].flags.src_ipv4_flag)
         {
-            is_suitable &= check_ipv4(buffer, bufflen, filters[i].src_ipv4, true);
+            if (!check_ipv4(buffer, bufflen, filters[i].src_ipv4, true))
+                goto on_fail;
         }
         if(filters[i].flags.ip_protocol_flag)
         {
-            is_suitable &= check_ip_protocol(buffer, bufflen, filters[i].ip_protocol);
+            if (!check_ip_protocol(buffer, bufflen, filters[i].ip_protocol))
+                goto on_fail;
         }
         if(filters[i].flags.dst_tcp_flag)
         {
-            is_suitable &= check_tcp(buffer, bufflen, filters[i].dst_tcp, false);
+            if (!check_tcp(buffer, bufflen, filters[i].dst_tcp, false))
+                goto on_fail;
         }
         if(filters[i].flags.src_tcp_flag)
         {
-            is_suitable &= check_tcp(buffer, bufflen, filters[i].src_tcp, true);
+            if (check_tcp(buffer, bufflen, filters[i].src_tcp, true))
+                goto on_fail;
         }
         if(filters[i].flags.dst_udp_flag)
         {
-            is_suitable &= check_udp(buffer, bufflen, filters[i].dst_udp, false);
+            if (check_udp(buffer, bufflen, filters[i].dst_udp, false))
+                goto on_fail;
         }
         if(filters[i].flags.src_udp_flag)
         {
-            is_suitable &= check_udp(buffer, bufflen, filters[i].src_udp, true);
+            if (check_udp(buffer, bufflen, filters[i].src_udp, true))
+                goto on_fail;
         }
 
-        if(is_suitable)
-        {
-            filters[i].count_packets += 1;
-            filters[i].size += bufflen;
-            DPRINTF("SUITABLE    +1 packet on filter %d: %ld\n", i, filters[i].count_packets);
-            print_packet(buffer, bufflen);
-        }
-
-        else
-        {
-            DPRINTF("NOT SUITABLE  %ld\n", filters[i].count_packets);
-            print_packet(buffer, bufflen);
-        }
+        filters[i].count_packets += 1;
+        filters[i].size += bufflen;
+        DPRINTF("SUITABLE    +1 packet on filter %zu: %ld\n", i, filters[i].count_packets);
+        print_packet(buffer, bufflen);
+        continue;
+on_fail:
+        DPRINTF("NOT SUITABLE  %ld\n", filters[i].count_packets);
+        print_packet(buffer, bufflen);
     }
 }
 
-void get_statistics(struct filter* filters, int filters_len, char* message)
+static void get_statistics(struct filter* filters, size_t filters_len, char* message, size_t message_sz)
 {
-    message[0] = '\0';
     if(filters_len<=0)
     {
-        char buffer[256];
-        snprintf(buffer, sizeof(buffer), "No filters yet\n");
-        strcat(message, buffer);
+        snprintf(message, message_sz, "No filters yet\n");
     }
-    for (int i = 0; i < filters_len; i++)
+    for (size_t i = 0; i < filters_len; i++)
     {
-        char buffer[MAX_MESSAGE];
-        snprintf(buffer, sizeof(buffer),
-                "Filter number %d: packets=%ld, total_size=%ld bytes\n",
+        snprintf(message, message_sz,
+                "Filter number %zu: packets=%ld, total_size=%ld bytes\n",
                 i + 1,
                 filters[i].count_packets,
                 filters[i].size);
-        strcat(message, buffer);
     }
 }
 
 
-bool parse_mac(const char* str, struct ether_addr* mac)
+static bool parse_mac(const char* str, struct ether_addr* mac)
 {
     return sscanf(str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
                  &mac->ether_addr_octet[0], &mac->ether_addr_octet[1],
@@ -608,9 +601,10 @@ bool parse_mac(const char* str, struct ether_addr* mac)
                  &mac->ether_addr_octet[4], &mac->ether_addr_octet[5]) == 6;
 }
 
-struct filter add_filter(char* buff, char** message)
+static struct filter add_filter(char* buff, char* message, size_t message_sz)
 {
     char* end = strchr(buff, '\r');
+    //FIXME:
     if (end)
     {
         *end = 0;
@@ -625,7 +619,7 @@ struct filter add_filter(char* buff, char** message)
     char* token = strtok(buff + strlen("add"), " ");
     if (!token)
     {
-        *message = "Error: No filter parameters";
+        strcpy(message, "Error: No filter parameters\n");
         return new_filter;
     }
 
@@ -633,7 +627,7 @@ struct filter add_filter(char* buff, char** message)
     {
         char* next_token = strtok(NULL, " ");
         if (!next_token) {
-            *message = "Error: No filter ";
+            strcpy(message, "Error: No filter\n");
             return new_filter;
         }
 
@@ -641,7 +635,7 @@ struct filter add_filter(char* buff, char** message)
         {
             if (!parse_mac(next_token, &new_filter.dst_mac))
             {
-                *message = "Error: filter dst_mac\n";
+                strcpy(message, "Error: filter dst_mac\n");
                 return new_filter;
             }
             new_filter.flags.dst_mac_flag = 1;
@@ -649,7 +643,7 @@ struct filter add_filter(char* buff, char** message)
         else if (strcmp(token, "src_mac") == 0) {
             if (!parse_mac(next_token, &new_filter.src_mac))
             {
-                *message = "Error:  filter src_mac\n";
+                strcpy(message, "Error: filter src_mac\n");
                 return new_filter;
             }
             new_filter.flags.src_mac_flag = 1;
@@ -665,11 +659,12 @@ struct filter add_filter(char* buff, char** message)
             if (!result)
             {
                 printf("error: Not in presentation format %s  %s\n ", next_token, inet_ntoa(new_filter.dst_ipv4));
-                *message = "Error: filter dst_ipv4: not in presentation format\n";
+                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
                 return new_filter;
             }
             if (result<0)
             {
+                //FIXME: message is not filled
                 perror("inet_pton error: ");
             }
             new_filter.flags.dst_ipv4_flag = 1;
@@ -679,11 +674,12 @@ struct filter add_filter(char* buff, char** message)
             if (!result)
             {
                 printf("error: Not in presentation format %s  %s\n ", next_token, inet_ntoa(new_filter.src_ipv4));
-                *message = "Error: filter dst_ipv4: not in presentation format\n";
+                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
                 return new_filter;
             }
             if (result<0)
             {
+                //FIXME: message is not filled
                 perror("inet_pton error: ");
             }
             new_filter.flags.src_ipv4_flag = 1;
@@ -715,19 +711,18 @@ struct filter add_filter(char* buff, char** message)
         }
         else
         {
-            *message ="Error:  unknown key \n";
-            print_help(message);
+            strcpy(message, get_help_message());
             return new_filter;
         }
         token = strtok(NULL, " ");
     }
-    *message = "success\n";
+    strcpy(message, "success\n");
     return new_filter;
 }
 
-char* delete_filter(char* buff, struct filter* filters,  int* filters_len)
+char const* delete_filter(char* buff, struct filter* filters,  int* filters_len)
 {
-    return "success\n";
+    return "not supported yet\n";
 }
 
 void input_from_client(int sock_client, struct filter* filters,  int* filters_len)
@@ -736,35 +731,34 @@ void input_from_client(int sock_client, struct filter* filters,  int* filters_le
     read(sock_client, buff, sizeof(buff));
 
     printf("From client: %s\t", buff);
-    char* message;
+    static char message[1024*1024];
 
     if (strncmp("add", buff, 3) == 0)
     {
-        filters[*filters_len] = add_filter(buff, &message);
+        filters[*filters_len] = add_filter(buff, message, sizeof(message));
         *filters_len +=1;
     }
 
     else if (strncmp( "del", buff, 3) == 0)
     {
-        message = delete_filter(buff, filters, filters_len);
+        strcpy(message, delete_filter(buff, filters, filters_len));
     }
 
     else if (strncmp("print", buff,  5) == 0)
     {
-        message  = malloc (sizeof("Filter number %d: packets=%d, total_size=%d bytes\n")* *filters_len);
-        get_statistics(filters, *filters_len, message);
+        get_statistics(filters, *filters_len, message, sizeof(message));
     }
     else if (strncmp("exit", buff,  4) == 0)
     {
-        message  = "exiting\n";
+        strcpy(message, "exiting\n");
         keep_running = 0;
     }
     else
     {
-        print_help(&message);
+        strcpy(message, get_help_message());
     }
 
-    send(sock_client, message, strlen(message) , MSG_NOSIGNAL);
+    send(sock_client, message, strlen(message), MSG_NOSIGNAL);
 }
 
 
@@ -777,28 +771,36 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    int  sock_sniffer, sock_client, sock_listen, saddr_len, bufflen;
+    int sock_sniffer = -1;
+    int sock_client = -1;
+    int sock_listen = -1;
+    int bufflen;
     int filters_len = 0;
-    struct sockaddr saddr;
+    struct sockaddr_in servaddr, clientaddr;
+    nfds_t count_sockets = 3;
+    struct pollfd fds[count_sockets];
 
-    unsigned char* buffer = (unsigned char *)malloc(MAX_PORTS);
+    char* buffer = (char *)malloc(MAX_PORTS);
+    if (!buffer)
+        goto on_fail;
     memset(buffer,0,MAX_PORTS);
 
     printf("starting .... \n");
 
-    sock_sniffer = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL));
-    sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
-    if(sock_sniffer <0 && sock_listen<0)
-    {
-        perror("error in socket\n");
-        return -1;
+    if ((sock_sniffer = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL))) < 0) {
+        perror("failed to create sniffer socket\n");
+        goto on_fail;
+    }
+    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
+        perror("failed to create listen socket\n");
+        goto on_fail;
+
     }
 
     if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0){
         perror("setsockopt(SO_REUSEADDR) failed");
     }
 
-    struct sockaddr_in servaddr, clientaddr;
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
@@ -808,6 +810,7 @@ int main(int argc, char* argv[])
         perror("socket bind failed...\n");
         exit(0);
     }
+
     if ((listen(sock_listen, 5)) != 0)
     {
         perror("Listen failed...\n");
@@ -815,8 +818,6 @@ int main(int argc, char* argv[])
     }
 
     // creating poll
-    nfds_t count_sockets = 3;
-    struct pollfd fds[count_sockets];
     fds[0].fd = sock_sniffer;
     fds[0].events = POLL_IN;
     fds[1].fd = sock_listen;
@@ -830,12 +831,11 @@ int main(int argc, char* argv[])
         if (count_poll == -1)
         {
             perror("poll error");
-            exit(0);
+            goto on_fail;
         }
 
         if(fds[0].revents & POLL_IN)
         {
-            saddr_len = sizeof saddr;
             bufflen = read(sock_sniffer,buffer, MAX_PORTS);
 
             if(bufflen<0)
@@ -895,4 +895,14 @@ int main(int argc, char* argv[])
         perror("Error in close client socket: ");
     }
     printf("DONE\n");
+    return EXIT_SUCCESS;
+on_fail:
+    free(buffer);
+    if (sock_sniffer != -1)
+        close(sock_sniffer);
+    if (sock_listen != -1)
+        close(sock_listen);
+    if (sock_client != -1)
+        close(sock_client);
+    return EXIT_FAILURE;
 }
