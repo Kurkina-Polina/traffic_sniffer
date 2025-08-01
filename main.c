@@ -409,7 +409,7 @@ static bool check_tcp(char const* buffer, size_t bufflen, uint16_t tcp_port, boo
     if (ether->ether_type == ETHERTYPE_IP)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
-        if (ip_head->ip_p == IPPROTO_TCP) //FIXME: dont use magic numbers
+        if (ip_head->ip_p == IPPROTO_TCP)
         {
             struct tcphdr *tcp = (struct tcphdr*)(buffer + ip_head->ip_hl*4 + sizeof(struct ethhdr));
             if (is_src && tcp->th_sport == tcp_port)
@@ -455,7 +455,7 @@ static bool check_tcp(char const* buffer, size_t bufflen, uint16_t tcp_port, boo
 bool check_udp(char const* buffer, size_t bufflen, uint16_t udp_port, bool is_src)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    if (ether->ether_type == ETHERTYPE_IP) //FIXME:
+    if (ether->ether_type == ETHERTYPE_IP)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
         if (ip_head->ip_p == IPPROTO_UDP)
@@ -652,31 +652,20 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
         else if (strcmp(token, "dst_ipv4") == 0)
         {
             int result = inet_pton(AF_INET, next_token, &new_filter.dst_ipv4);
-            if (!result)
-            {
+            if (result<=0) {
                 printf("error: Not in presentation format %s  %s\n ", next_token, inet_ntoa(new_filter.dst_ipv4));
                 strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
                 return new_filter;
-            }
-            if (result<0)
-            {
-                //FIXME: message is not filled
-                perror("inet_pton error: ");
             }
             new_filter.flags.dst_ipv4_flag = 1;
         }
         else if (strcmp(token, "src_ipv4") == 0) {
             int result = inet_pton(AF_INET, next_token, &new_filter.src_ipv4);
-            if (!result)
+            if (result<=0)
             {
                 printf("error: Not in presentation format %s  %s\n ", next_token, inet_ntoa(new_filter.src_ipv4));
                 strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
                 return new_filter;
-            }
-            if (result<0)
-            {
-                //FIXME: message is not filled
-                perror("inet_pton error: ");
             }
             new_filter.flags.src_ipv4_flag = 1;
         }
