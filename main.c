@@ -503,7 +503,7 @@ bool check_udp(char const* buffer, size_t bufflen, uint16_t udp_port, bool is_sr
  * @sa                        check_mac check_ipv4 check_ip_protocol
  *                            check_ether_type check_tcp check_udp
  *
- * @todo                      add checks for vlan id and ipv6
+ * @todo                      add checks for vlan id, ipv6, interfaces
  */
 static void data_process(char const* buffer, size_t bufflen,
                   struct filter* filters, size_t filters_len)
@@ -572,6 +572,19 @@ on_fail:
     }
 }
 
+/**
+ * Check if the packet is suit for any filters/
+ *
+ * @param buffer              full buffer, received from client
+ * @param bufflen             size of buffer
+ * @param filters             all setted filters
+ * @param filters_len         count of setted filters
+ *
+ * @sa                        check_mac check_ipv4 check_ip_protocol
+ *                            check_ether_type check_tcp check_udp
+ *
+ * @todo                      add checks for vlan id and ipv6
+ */
 static void get_statistics(struct filter* filters, size_t filters_len, char* message, size_t message_sz)
 {
     if(filters_len<=0)
