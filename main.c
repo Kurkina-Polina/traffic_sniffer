@@ -27,6 +27,7 @@
 #define MAX_MESSAGE 1000
 /* Temporary solution to create filters list. */
 #define MAX_FILTERS 10
+// FIXME:
 /* Temporary silution to start server on that port. */
 #define PORT 8080
 
@@ -122,7 +123,7 @@ static void print_mac_addr(uint8_t const* const addr)
 /**
  * Hendler for interrupt by SIGINT.
  */
-static void handler(int)
+static void handler()
 {
     keep_running = 0;
 }
@@ -229,16 +230,12 @@ void udp_header(char const* buffer, size_t bufflen, size_t iphdrlen)
  * Print ip header of a packet.
  *
  * @param buffer    full buffer, received from client
- * @param bufflen   size of buffer
+ * @param buf_flen   size of buffer
  *
  * @sa tcp_header udp_header
  */
-void ip_header(char const* buffer, size_t bufflen)
+void ip_header(char const* buffer, size_t buf_flen)
 {
-    enum {
-        IP_TCP_PROTOCOL = 6,
-        IP_UDP_PROTOCOL = 17,
-    };
     struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
     printf("ip Header\n");
     printf("Version           :    %u\n", ip_head->ip_v);
@@ -249,11 +246,11 @@ void ip_header(char const* buffer, size_t bufflen)
     printf("Destination ip    :    %s\n",inet_ntoa(ip_head->ip_dst));
 
     switch(ip_head->ip_p) {
-        case IP_TCP_PROTOCOL:
-            tcp_header(buffer, bufflen, ip_head->ip_hl*IHL_WORD_LEN);
+        case IPPROTO_TCP:
+            tcp_header(buffer, buf_flen, ip_head->ip_hl*IHL_WORD_LEN);
             break;
-        case IP_UDP_PROTOCOL:
-            udp_header(buffer, bufflen, ip_head->ip_hl*IHL_WORD_LEN);
+        case IPPROTO_UDP:
+            udp_header(buffer, buf_flen, ip_head->ip_hl*IHL_WORD_LEN);
             break;
         default:
             printf("\n\n");
@@ -336,9 +333,8 @@ bool check_ether_type(char const* buffer, int bufflen, uint16_t ether_type)
  */
 static bool check_ipv4(char const* buffer, size_t bufflen,  struct in_addr ipv, bool is_scr)
 {
-    // FIXME: check me
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    if (ether->ether_type == 8)
+    if (ether->ether_type == ETHERTYPE_IP)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
         if(is_scr)
@@ -352,7 +348,7 @@ static bool check_ipv4(char const* buffer, size_t bufflen,  struct in_addr ipv, 
         else{
             if(ip_head->ip_dst.s_addr == ipv.s_addr)
             {
-                DPRINTF("it is %s=%s\n", inet_ntoa(ip_head->ip_src),  inet_ntoa(ipv));
+                DPRINTF("it is %s=%s\n", inet_ntoa(ip_head->ip_dst),  inet_ntoa(ipv));
                 return true;
             }
         }
@@ -389,7 +385,7 @@ static bool check_ip_protocol(char const* buffer, size_t bufflen, uint8_t ip_pro
     }
     else if(ether->ether_type == ETHERTYPE_IPV6)
     {
-        //TBD
+        /* It is ipv6. Will be done later*/
         return false;
     }
     return false;
@@ -413,7 +409,7 @@ static bool check_tcp(char const* buffer, size_t bufflen, uint16_t tcp_port, boo
     if (ether->ether_type == ETHERTYPE_IP)
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
-        if (ip_head->ip_p == 6) //FIXME: dont use magic numbers
+        if (ip_head->ip_p == IPPROTO_TCP) //FIXME: dont use magic numbers
         {
             struct tcphdr *tcp = (struct tcphdr*)(buffer + ip_head->ip_hl*4 + sizeof(struct ethhdr));
             if (is_src && tcp->th_sport == tcp_port)
@@ -459,10 +455,10 @@ static bool check_tcp(char const* buffer, size_t bufflen, uint16_t tcp_port, boo
 bool check_udp(char const* buffer, size_t bufflen, uint16_t udp_port, bool is_src)
 {
     struct ether_header const* const ether = (struct ether_header const*)buffer;
-    if (ether->ether_type == 8) //FIXME:
+    if (ether->ether_type == ETHERTYPE_IP) //FIXME:
     {
         struct ip const* const ip_head = (struct ip const*)(buffer + sizeof(struct ether_header));
-        if (ip_head->ip_p == 17)
+        if (ip_head->ip_p == IPPROTO_UDP)
         {
 
             struct udphdr *udp = (struct udphdr*)(buffer + ip_head->ip_hl*4 + sizeof(struct ethhdr));
@@ -488,7 +484,7 @@ bool check_udp(char const* buffer, size_t bufflen, uint16_t udp_port, bool is_sr
             return false;
         }
     }
-    else if(ether->ether_type == 0x86DD) //FIXME:
+    else if(ether->ether_type == ETHERTYPE_IPV6)
     {
         /* It is ipv6. Will be done later*/
         return false;
@@ -631,7 +627,7 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
             return new_filter;
         }
 
-        else if (strcmp(token, "dst_mac") == 0)
+        if (strcmp(token, "dst_mac") == 0)
         {
             if (!parse_mac(next_token, &new_filter.dst_mac))
             {
@@ -727,24 +723,24 @@ char const* delete_filter(char* buff, struct filter* filters,  int* filters_len)
 
 void input_from_client(int sock_client, struct filter* filters,  int* filters_len)
 {
-    char buff[MAX_MESSAGE] = {};
-    read(sock_client, buff, sizeof(buff));
+    char message_reseive[MAX_MESSAGE] = {};
+    read(sock_client, message_reseive, sizeof(message_reseive));
 
-    printf("From client: %s\t", buff);
-    static char message[1024*1024];
+    printf("From client: %s\t", message_reseive);
+    static char message[MAX_MESSAGE];
 
-    if (strncmp("add", buff, 3) == 0)
+    if (strncmp("add", message_reseive, 3) == 0)
     {
-        filters[*filters_len] = add_filter(buff, message, sizeof(message));
+        filters[*filters_len] = add_filter(message_reseive, message, sizeof(message));
         *filters_len +=1;
     }
 
-    else if (strncmp( "del", buff, 3) == 0)
+    else if (strncmp( "del", message_reseive, 3) == 0)
     {
-        strcpy(message, delete_filter(buff, filters, filters_len));
+        strcpy(message, delete_filter(message_reseive, filters, filters_len));
     }
 
-    else if (strncmp("print", buff,  5) == 0)
+    else if (strncmp("print", message_reseive,  5) == 0)
     {
         get_statistics(filters, *filters_len, message, sizeof(message));
     }
