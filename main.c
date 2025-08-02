@@ -676,7 +676,7 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
             {
                 printf("error: Not in presentation format %s  %s\n ",
                     next_token, inet_ntoa(new_filter.src_ipv4));
-                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
+                strcpy(message, "Error: filter src_ipv4: not in presentation format\n");
                 return new_filter;
             }
             new_filter.flags.src_ipv4_flag = 1;
@@ -786,10 +786,11 @@ void input_from_client(int sock_client,
 int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen,
     uint16_t port_server, uint32_t ip_server)
 {
-    struct sockaddr_in servaddr;
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = ip_server;
-    servaddr.sin_port = port_server;
+    struct sockaddr_in servaddr = {
+        .sin_family = AF_INET,
+        .sin_addr = { .s_addr = ip_server, },
+        .sin_port = port_server,
+    };
 
     if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR,
         &(int){1}, sizeof(int)) < 0){
@@ -806,8 +807,13 @@ int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen,
         return -1;
     }
 
-    fds[0].fd = sock_sniffer;
-    fds[0].events = POLL_IN;
+    enum {
+        SNIFFER_INDEX = 0,
+        LISTEN_INDX = 1,
+        CMD_INDX = 2
+    };
+    fds[SNIFFER_INDEX].fd = sock_sniffer;
+    fds[SNIFFER_INDEX].events = POLL_IN;
     fds[1].fd = sock_listen;
     fds[1].events = POLL_IN;
     fds[2].fd = -1;
@@ -824,11 +830,11 @@ int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen,
  * @param sock_sniffer         socket for grab all packets and analyze them
  *
  */
-void poll_loop(struct pollfd *fds, int const count_sockets, int sock_sniffer,
+void poll_loop(struct pollfd *fds, size_t const count_sockets, int sock_sniffer,
     int sock_listen, int sock_client)
 {
     static char buffer [MAX_PORTS];
-    int bufflen;
+    ssize_t bufflen;
     int filters_len = 0;
     struct sockaddr_in clientaddr;
     struct filter* filters = (struct filter *)malloc(
@@ -943,15 +949,10 @@ void command_line(int argc, char* argv[], struct in_addr *ip_server,
 
 int main(int argc, char* argv[])
 {
-    // signal(SIGINT, handler); /* end inf cycle */
-    // void* prev = signal(SIGPIPE, SIG_IGN);
-    // if (prev == SIG_ERR){
-    //     return EXIT_FAILURE;
-    // }
-
     struct in_addr ip_server = {0};
     uint16_t port_server = 0;
 
+    command_line(argc, argv, &ip_server, &port_server);
 
     int sock_sniffer = -1, sock_client = -1, sock_listen = -1;
     nfds_t const count_sockets = 3;
@@ -966,7 +967,7 @@ int main(int argc, char* argv[])
     }
 
 
-    if (!setup_sockets(fds, sock_sniffer, sock_listen, port_server, ip_server.s_addr))
+    if (setup_sockets(fds, sock_sniffer, sock_listen, port_server, ip_server.s_addr))
         goto to_exit;
 
     poll_loop(fds, count_sockets, sock_sniffer, sock_listen, sock_client);
