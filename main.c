@@ -792,39 +792,12 @@ int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen)
     fds[1].events = POLL_IN;
 }
 
-int main(int argc, char* argv[])
+void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock_listen, int sock_client)
 {
-    // signal(SIGINT, handler); /* end inf cycle */
-    // void* prev = signal(SIGPIPE, SIG_IGN);
-    // if (prev == SIG_ERR){
-    //     return EXIT_FAILURE;
-    // }
-
-    printf("starting .... \n");
-
-    int sock_sniffer = -1, sock_client = -1, sock_listen = -1;
+    static char buffer [MAX_PORTS];
     int bufflen;
     int filters_len = 0;
     struct sockaddr_in clientaddr;
-    nfds_t count_sockets = 3;
-    struct pollfd fds[count_sockets];
-    if ((sock_sniffer = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL))) < 0) {
-        perror("failed to create sniffer socket\n");
-        goto to_exit;
-    }
-    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
-        perror("failed to create listen socket\n");
-        goto to_exit;
-    }
-
-    // FIXME buffwr may be local or static
-    char* buffer = (char *)malloc(MAX_PORTS);
-    if (!buffer)
-        goto to_exit;
-    memset(buffer,0,MAX_PORTS);
-
-    setup_sockets(fds, sock_sniffer, sock_listen);
-
     struct filter* filters = (struct filter *)malloc(sizeof(struct filter) * MAX_FILTERS);
 
     while(keep_running)
@@ -833,7 +806,8 @@ int main(int argc, char* argv[])
         if (count_poll == -1)
         {
             perror("poll error");
-            goto to_exit;
+            free(filters);
+            return;
         }
 
         if(fds[0].revents & POLL_IN)
@@ -843,14 +817,15 @@ int main(int argc, char* argv[])
             if(bufflen<0)
             {
                 perror("error in reading recvfrom function\n");
-                return -1;
+                free(filters);
+                return;
             }
             data_process(buffer, bufflen, filters,  filters_len);
         }
 
         if(fds[1].revents & POLL_IN)
         {
-            printf("server read signal to connect\nw");
+            printf("server read signal to connect\n");
             socklen_t sock_client_len;
             sock_client = accept(sock_listen, (struct sockaddr*)&clientaddr, &sock_client_len);
             if (is_already_established)
@@ -882,9 +857,42 @@ int main(int argc, char* argv[])
             }
         }
     }
-to_exit:
-    free(buffer);
     free(filters);
+}
+
+int main(int argc, char* argv[])
+{
+    // signal(SIGINT, handler); /* end inf cycle */
+    // void* prev = signal(SIGPIPE, SIG_IGN);
+    // if (prev == SIG_ERR){
+    //     return EXIT_FAILURE;
+    // }
+
+    printf("starting .... \n");
+
+    int sock_sniffer = -1, sock_client = -1, sock_listen = -1;
+    nfds_t count_sockets = 3;
+    struct pollfd fds[count_sockets];
+    if ((sock_sniffer = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL))) < 0) {
+        perror("failed to create sniffer socket\n");
+        goto to_exit;
+    }
+    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
+        perror("failed to create listen socket\n");
+        goto to_exit;
+    }
+
+    // // FIXME buffwr may be local or static
+    // char* buffer = (char *)malloc(MAX_PORTS);
+    // if (!buffer)
+    //     goto to_exit;
+    // memset(buffer,0,MAX_PORTS);
+
+    setup_sockets(fds, sock_sniffer, sock_listen);
+
+    poll_loop(fds, count_sockets, sock_sniffer, sock_listen, sock_client);
+
+to_exit:
     if (sock_sniffer != -1)
         close(sock_sniffer);
     if (sock_listen != -1)
