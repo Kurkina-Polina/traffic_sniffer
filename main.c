@@ -630,7 +630,7 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
 {
     struct filter new_filter = {0};
     buff[strcspn(buff, "\n")] = '\0';
-    
+
     char* token = strtok(buff + strlen("add"), " ");
     if (!token)
     {
@@ -765,67 +765,65 @@ void input_from_client(int sock_client, struct filter* filters,  int* filters_le
     send(sock_client, message_send, strlen(message_send), MSG_NOSIGNAL);
 }
 
-
-
-int main(int argc, char* argv[])
+int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen)
 {
-    signal(SIGINT, handler);
-    void* prev = signal(SIGPIPE, SIG_IGN);
-    if (prev == SIG_ERR){
-        return EXIT_FAILURE;
-    }
-
-    int sock_sniffer = -1;
-    int sock_client = -1;
-    int sock_listen = -1;
-    int bufflen;
-    int filters_len = 0;
-    struct sockaddr_in servaddr, clientaddr;
-    nfds_t count_sockets = 3;
-    struct pollfd fds[count_sockets];
-
-    char* buffer = (char *)malloc(MAX_PORTS);
-    if (!buffer)
-        goto on_fail;
-    memset(buffer,0,MAX_PORTS);
-
-    printf("starting .... \n");
-
-    if ((sock_sniffer = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL))) < 0) {
-        perror("failed to create sniffer socket\n");
-        goto on_fail;
-    }
-    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
-        perror("failed to create listen socket\n");
-        goto on_fail;
-
-    }
-
-    if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0){
-        perror("setsockopt(SO_REUSEADDR) failed");
-    }
-
+    struct sockaddr_in servaddr;
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
 
+    if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0){
+        perror("setsockopt(SO_REUSEADDR) failed");
+    }
     if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
     {
         perror("socket bind failed...\n");
         exit(0);
     }
-
     if ((listen(sock_listen, 5)) != 0)
     {
         perror("Listen failed...\n");
         exit(0);
     }
 
-    // creating poll
     fds[0].fd = sock_sniffer;
     fds[0].events = POLL_IN;
     fds[1].fd = sock_listen;
     fds[1].events = POLL_IN;
+}
+
+int main(int argc, char* argv[])
+{
+    // signal(SIGINT, handler); /* end inf cycle */
+    // void* prev = signal(SIGPIPE, SIG_IGN);
+    // if (prev == SIG_ERR){
+    //     return EXIT_FAILURE;
+    // }
+
+    printf("starting .... \n");
+
+    int sock_sniffer = -1, sock_client = -1, sock_listen = -1;
+    int bufflen;
+    int filters_len = 0;
+    struct sockaddr_in clientaddr;
+    nfds_t count_sockets = 3;
+    struct pollfd fds[count_sockets];
+    if ((sock_sniffer = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL))) < 0) {
+        perror("failed to create sniffer socket\n");
+        goto to_exit;
+    }
+    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
+        perror("failed to create listen socket\n");
+        goto to_exit;
+    }
+
+    // FIXME buffwr may be local or static
+    char* buffer = (char *)malloc(MAX_PORTS);
+    if (!buffer)
+        goto to_exit;
+    memset(buffer,0,MAX_PORTS);
+
+    setup_sockets(fds, sock_sniffer, sock_listen);
 
     struct filter* filters = (struct filter *)malloc(sizeof(struct filter) * MAX_FILTERS);
 
@@ -835,7 +833,7 @@ int main(int argc, char* argv[])
         if (count_poll == -1)
         {
             perror("poll error");
-            goto on_fail;
+            goto to_exit;
         }
 
         if(fds[0].revents & POLL_IN)
@@ -884,29 +882,14 @@ int main(int argc, char* argv[])
             }
         }
     }
-
-    close(sock_sniffer);
-    if (!close(sock_sniffer))
-    {
-        perror("Error in close sniffer socket: ");
-    }
-    if (!close(sock_listen))
-    {
-        perror("Error in close listen socket: ");
-    }
-    if (!close(sock_client))
-    {
-        perror("Error in close client socket: ");
-    }
-    printf("DONE\n");
-    return EXIT_SUCCESS;
-on_fail:
+to_exit:
     free(buffer);
+    free(filters);
     if (sock_sniffer != -1)
         close(sock_sniffer);
     if (sock_listen != -1)
         close(sock_listen);
     if (sock_client != -1)
         close(sock_client);
-    return EXIT_FAILURE;
+    return 0;
 }
