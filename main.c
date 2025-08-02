@@ -38,8 +38,6 @@
 
 /* Flag for end program. */
 static volatile bool keep_running = 1;
-/* Flag to indicate start new connection with client or not. */
-static bool is_already_established = 0;
 
 /* Bitmask flags indicating which filter types are active. */
 struct filter_flag
@@ -755,7 +753,12 @@ void input_from_client(int sock_client, struct filter* filters,  int* filters_le
     else if (strncmp("exit", message_reseive,  4) == 0)
     {
         strcpy(message_send, "exiting\n");
-        keep_running = 0;
+        send(sock_client, message_send, strlen(message_send), MSG_NOSIGNAL);
+        if (!close(sock_client))
+        {
+            perror("Error in close connection: ");
+        }
+        return;
     }
     else
     {
@@ -790,6 +793,8 @@ int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen)
     fds[0].events = POLL_IN;
     fds[1].fd = sock_listen;
     fds[1].events = POLL_IN;
+    fds[2].fd = -1;
+    fds[2].events = POLL_IN;
 }
 
 void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock_listen, int sock_client)
@@ -799,6 +804,11 @@ void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock
     int filters_len = 0;
     struct sockaddr_in clientaddr;
     struct filter* filters = (struct filter *)malloc(sizeof(struct filter) * MAX_FILTERS);
+    if (!filters)
+    {
+        perror("Erorr in malloc");
+        return;
+    }
 
     while(keep_running)
     {
@@ -828,7 +838,7 @@ void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock
             printf("server read signal to connect\n");
             socklen_t sock_client_len;
             sock_client = accept(sock_listen, (struct sockaddr*)&clientaddr, &sock_client_len);
-            if (is_already_established)
+            if (fds[2].fd != -1)
             {
                 char message[] = "Already busy";
                 memmove(buffer, message, sizeof(message));
@@ -840,8 +850,6 @@ void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock
                 continue;
             }
             fds[2].fd = sock_client;
-            fds[2].events = POLL_IN;
-            is_already_established = 1;
         }
         if(fds[2].revents & POLL_IN)
         {
@@ -850,7 +858,7 @@ void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock
         if(fds[1].revents &POLLHUP||fds[1].revents &POLLERR)
         {
             printf("closing connection\n");
-            is_already_established=0;
+            fds[1].fd = -1 ;
             if (!close(sock_client))
             {
                 perror("Error in close connection: ");
@@ -882,22 +890,14 @@ int main(int argc, char* argv[])
         goto to_exit;
     }
 
-    // // FIXME buffwr may be local or static
-    // char* buffer = (char *)malloc(MAX_PORTS);
-    // if (!buffer)
-    //     goto to_exit;
-    // memset(buffer,0,MAX_PORTS);
-
     setup_sockets(fds, sock_sniffer, sock_listen);
 
-    poll_loop(fds, count_sockets, sock_sniffer, sock_listen, sock_client);
+    poll_loop(fds, count_sockets=3, sock_sniffer, sock_listen, sock_client);
 
 to_exit:
     if (sock_sniffer != -1)
         close(sock_sniffer);
     if (sock_listen != -1)
         close(sock_listen);
-    if (sock_client != -1)
-        close(sock_client);
     return 0;
 }
