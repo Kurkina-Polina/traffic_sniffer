@@ -8,7 +8,7 @@
 
 2. Run the server by specifying IP address and port:
     ```bash
-    ./server <IP> <PORT>
+    ./server -a <IP> -p <PORT>
 (Example: ./server 0.0.0.0 8080 to listen on all interfaces on port 8080)
 
 ## Client Connection
