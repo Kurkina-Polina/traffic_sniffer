@@ -4,6 +4,7 @@
 #include<signal.h>
 #include<stdbool.h>
 #include <poll.h>
+#include <unistd.h>
 
 #include<sys/socket.h>
 #include<sys/types.h>
@@ -621,7 +622,7 @@ static bool parse_mac(const char* str, struct ether_addr* mac)
  *
  * @todo                       add vlan_id, ipv6, interface
  *
- * @reruen filter              new one filter
+ * @return filter              new one filter
  *
  */
 static struct filter add_filter(char* buff, char* message, size_t message_sz)
@@ -653,7 +654,8 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
             }
             new_filter.flags.dst_mac_flag = 1;
         }
-        else if (strcmp(token, "src_mac") == 0) {
+        else if (strcmp(token, "src_mac") == 0)
+        {
             if (!parse_mac(next_token, &new_filter.src_mac))
             {
                 strcpy(message, "Error: filter src_mac\n");
@@ -676,7 +678,8 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
             }
             new_filter.flags.dst_ipv4_flag = 1;
         }
-        else if (strcmp(token, "src_ipv4") == 0) {
+        else if (strcmp(token, "src_ipv4") == 0)
+        {
             int result = inet_pton(AF_INET, next_token, &new_filter.src_ipv4);
             if (result<=0)
             {
@@ -722,11 +725,24 @@ static struct filter add_filter(char* buff, char* message, size_t message_sz)
     return new_filter;
 }
 
+/**
+ * Delete filter by a number. Not supported yet
+ */
 char const* delete_filter(char* buff, struct filter* filters,  int* filters_len)
 {
     return "not supported yet\n";
 }
 
+/**
+ * Reseive a packet on sock_client and process a data.
+ * Calls a function by any command in the packet.
+ * Send message to sock_client about the results.
+ *
+ * @param sock_client          opened socket that receive info
+ * @param filters              all set filters
+ * @param filters_len          count of filters set
+ *
+ */
 void input_from_client(int sock_client, struct filter* filters,  int* filters_len)
 {
     char message_reseive[MAX_MESSAGE] = {};
@@ -740,12 +756,10 @@ void input_from_client(int sock_client, struct filter* filters,  int* filters_le
         filters[*filters_len] = add_filter(message_reseive, message_send, sizeof(message_send));
         *filters_len +=1;
     }
-
     else if (strncmp( "del", message_reseive, 3) == 0)
     {
         strcpy(message_send, delete_filter(message_reseive, filters, filters_len));
     }
-
     else if (strncmp("print", message_reseive,  5) == 0)
     {
         get_statistics(filters, *filters_len, message_send, sizeof(message_send));
@@ -764,29 +778,43 @@ void input_from_client(int sock_client, struct filter* filters,  int* filters_le
     {
         strcpy(message_send, get_help_message());
     }
-
-    send(sock_client, message_send, strlen(message_send), MSG_NOSIGNAL);
+    send(sock_client, message_send,
+        strlen(message_send), MSG_NOSIGNAL);
 }
 
-int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen)
+/**
+ * Set up sockets, addresses and structure for poll.
+ *
+ * @param fds                  opened socket that receive info
+ * @param sock_sniffer         socket for grab all packets and analyze them
+ * @param sock_listen          socket for listen connections
+ * @param port_server          port on which server works
+ * @param ip_server            ip address on which server works
+ *
+ * @return                     0 if success and -1 if fail
+ *
+ */
+int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen,
+    uint16_t port_server, uint16_t ip_server)
 {
     struct sockaddr_in servaddr;
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_addr.s_addr = ip_server;
+    servaddr.sin_port = htons(port_server);
 
-    if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0){
+    if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR,
+        &(int){1}, sizeof(int)) < 0){
         perror("setsockopt(SO_REUSEADDR) failed");
     }
     if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
     {
         perror("socket bind failed...\n");
-        exit(0);
+        return -1;
     }
     if ((listen(sock_listen, 5)) != 0)
     {
         perror("Listen failed...\n");
-        exit(0);
+        return -1;
     }
 
     fds[0].fd = sock_sniffer;
@@ -795,9 +823,20 @@ int setup_sockets(struct pollfd *fds, int sock_sniffer, int sock_listen)
     fds[1].events = POLL_IN;
     fds[2].fd = -1;
     fds[2].events = POLL_IN;
+
+    return 0;
 }
 
-void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer, int sock_listen, int sock_client)
+/**
+ * Cycle for poll.
+ *
+ * @param fds                  opened socket that receive info
+ * @param count_sockets        count of all sockets in poll
+ * @param sock_sniffer         socket for grab all packets and analyze them
+ *
+ */
+void poll_loop(struct pollfd *fds, int count_sockets, int sock_sniffer,
+    int sock_listen, int sock_client)
 {
     static char buffer [MAX_PORTS];
     int bufflen;
@@ -875,8 +914,38 @@ int main(int argc, char* argv[])
     // if (prev == SIG_ERR){
     //     return EXIT_FAILURE;
     // }
-
-    printf("starting .... \n");
+    int opt;
+    struct in_addr ip_server = {0};
+    uint16_t port_server = 0;
+    while ((opt = getopt(argc, argv, "a:p:")) != -1) {
+        switch (opt)
+        {
+            case 'a':
+                int result = inet_pton(AF_INET, optarg, &ip_server.s_addr);
+                if (result <= 0)
+                {
+                    fprintf(stderr, "Invalid value for ip address\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            case 'p':
+                port_server = htons((uint16_t)strtoul(optarg, NULL, 0));
+                break;
+            default:
+                fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+    if (ip_server == 0) {
+        fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    if (port_server == 0) {
+        fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+ // FIXME
+    printf("starting on %s and on port %s\n", inet_ntoa(ip_server), ntohs(port_server);
 
     int sock_sniffer = -1, sock_client = -1, sock_listen = -1;
     nfds_t count_sockets = 3;
@@ -889,8 +958,17 @@ int main(int argc, char* argv[])
         perror("failed to create listen socket\n");
         goto to_exit;
     }
+    struct tcphdr *tcp = (struct tcphdr*)(buffer + ip_head->ip_hl*4 + sizeof(struct ethhdr));
+            if (is_src && tcp->th_sport == tcp_port)
+            {
+                DPRINTF("tcp is suitable %u\n", ntohs(tcp->th_sport));
+                return true;
+            }
 
-    setup_sockets(fds, sock_sniffer, sock_listen);
+    if (!setup_sockets(fds, sock_sniffer, sock_listen, port_server, ip_server))
+    {
+        go to_exit;
+    }
 
     poll_loop(fds, count_sockets=3, sock_sniffer, sock_listen, sock_client);
 
