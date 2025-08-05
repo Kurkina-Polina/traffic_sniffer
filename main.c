@@ -48,7 +48,7 @@
 /* Temporary function to print progress of work. */
 #define DPRINTF(...) printf(__VA_ARGS__)
 
-/* Indexes of sockets for poll */
+/* Indexes of sockets for poll. */
 enum {
     SNIFFER_INDEX = 0,
     LISTEN_INDEX = 1,
@@ -137,7 +137,7 @@ get_help_message()
 static void
 print_mac_addr(uint8_t const *addr)
 {
-    printf("%d:%d:%d:%d:%d:%d \n",
+    printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
         addr[0], addr[1], addr[2],addr[3],addr[4],addr[5]);
 }
 
@@ -588,9 +588,9 @@ on_fail:
 /**
  * Make message about all statistics
  *
- * @param filters              all setted filters
- * @param filters_len          count of setted filters
- * @param message[out]              statistics by every filter
+ * @param filters                  all setted filters
+ * @param filters_len              count of setted filters
+ * @param message[out]             statistics by every filter
  * @param message_sz [in]          size of message of statistics
  *
  */
