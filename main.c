@@ -635,7 +635,8 @@ parse_mac(const char *str, struct ether_addr *mac)
 /**
  * Splits the string into tokens and every token compare with keys.
  * Every key set in filers massive and set the flag indicating
- * what key is set.
+ * what key is set. If key already is set, next key will be ignored.
+ * If some key is invalid or other problems, function returns empty filter.
  *
  * @param buff                 string contain mac address
  * @param message[out]         message about the result of work
@@ -654,7 +655,7 @@ add_filter(char *buff, char *message, size_t message_sz)
     buff[strcspn(buff, "\r\n")] = '\0';
     DPRINTF("buffer |%s|\n", buff);
 
-    char *token = strtok(buff + strlen("add"), " ");
+    char *token = strtok(buff + sizeof(CMD_ADD) - 1, " ");
     if (!token)
     {
         strcpy(message, "Error: No filter parameters\n");
@@ -669,7 +670,7 @@ add_filter(char *buff, char *message, size_t message_sz)
             return empty_filter;
         }
 
-        if (strcmp(token, "dst_mac") == 0 )
+        if ((strcmp(token, "dst_mac") == 0) && (new_filter.flags.dst_mac_flag == 0))
         {
             if (!parse_mac(next_token, &new_filter.dst_mac))
             {
@@ -678,7 +679,7 @@ add_filter(char *buff, char *message, size_t message_sz)
             }
             new_filter.flags.dst_mac_flag = 1;
         }
-        else if (strcmp(token, "src_mac") == 0)
+        else if ((strcmp(token, "src_mac") == 0) && (new_filter.flags.src_mac_flag == 0))
         {
             if (!parse_mac(next_token, &new_filter.src_mac))
             {
@@ -687,12 +688,12 @@ add_filter(char *buff, char *message, size_t message_sz)
             }
             new_filter.flags.src_mac_flag = 1;
         }
-        else if (strcmp(token, "ether_type") == 0)
+        else if ((strcmp(token, "ether_type") == 0) && (new_filter.flags.ether_type_flag == 0))
         {
             new_filter.ether_type = htons((uint16_t)strtoul(next_token, NULL, 0));
             new_filter.flags.ether_type_flag = 1;
         }
-        else if (strcmp(token, "dst_ipv4") == 0)
+        else if ((strcmp(token, "dst_ipv4") == 0) && (new_filter.flags.dst_ipv4_flag == 0))
         {
             int result = inet_pton(AF_INET, next_token, &new_filter.dst_ipv4);
             if (result<=0) {
@@ -704,7 +705,7 @@ add_filter(char *buff, char *message, size_t message_sz)
             }
             new_filter.flags.dst_ipv4_flag = 1;
         }
-        else if (strcmp(token, "src_ipv4") == 0)
+        else if ((strcmp(token, "src_ipv4") == 0) && (new_filter.flags.src_ipv4_flag == 0))
         {
             int result = inet_pton(AF_INET, next_token, &new_filter.src_ipv4);
             if (result<=0)
@@ -716,27 +717,32 @@ add_filter(char *buff, char *message, size_t message_sz)
             }
             new_filter.flags.src_ipv4_flag = 1;
         }
-        else if (strcmp(token, "ip_protocol") == 0)
+        else if ((strcmp(token, "ip_protocol") == 0)
+            && (new_filter.flags.ip_protocol_flag == 0))
         {
             new_filter.ip_protocol = (uint8_t)strtoul(next_token, NULL, 0);
             new_filter.flags.ip_protocol_flag = 1;
         }
-        else if (strcmp(token, "src_tcp") == 0)
+        else if ((strcmp(token, "src_tcp") == 0)
+            && (new_filter.flags.src_tcp_flag == 0))
         {
             new_filter.src_tcp = htons((uint16_t)strtoul(next_token, NULL, 0));
             new_filter.flags.src_tcp_flag = 1;
         }
-        else if (strcmp(token, "dst_tcp") == 0)
+        else if ((strcmp(token, "dst_tcp") == 0)
+            && (new_filter.flags.dst_tcp_flag == 0))
         {
             new_filter.dst_tcp = htons((uint16_t)strtoul(next_token, NULL, 0));
             new_filter.flags.dst_tcp_flag = 1;
         }
-        else if (strcmp(token, "src_udp") == 0)
+        else if ((strcmp(token, "src_udp") == 0)
+            && (new_filter.flags.src_udp_flag == 0))
         {
             new_filter.src_udp = htons((uint16_t)strtoul(next_token, NULL, 0));
             new_filter.flags.src_udp_flag = 1;
         }
-        else if (strcmp(token, "dst_udp") == 0)
+        else if ((strcmp(token, "dst_udp") == 0)
+            && (new_filter.flags.dst_udp_flag == 0))
         {
             new_filter.dst_udp = htons((uint16_t)strtoul(next_token, NULL, 0));
             new_filter.flags.dst_udp_flag = 1;
