@@ -61,41 +61,44 @@ static volatile bool keep_running = 1;
 /* Bitmask flags indicating which filter types are active. */
 struct filter_flag
 {
-    bool vlan_id_flag;
-    bool dst_mac_flag;
-    bool src_mac_flag;
-    bool ether_type_flag;
-    bool dst_ipv4_flag;
-    bool src_ipv4_flag;
-    bool dst_ipv6_flag;
-    bool src_ipv6_flag;
-    bool ip_protocol_flag;
-    bool dst_tcp_flag;
-    bool src_tcp_flag;
-    bool dst_udp_flag;
-    bool src_udp_flag;
+    int vlan_id_flag : 1;
+    int dst_mac_flag : 1;
+    int src_mac_flag : 1;
+    int ether_type_flag : 1;
+    int dst_ipv4_flag : 1;
+    int src_ipv4_flag : 1;
+    int dst_ipv6_flag : 1;
+    int src_ipv6_flag : 1;
+    int ip_protocol_flag : 1;
+    int dst_tcp_flag : 1;
+    int src_tcp_flag : 1;
+    int dst_udp_flag : 1;
+    int src_udp_flag : 1;
 };
 
 /* Filter contains or not keys. */
 struct filter
 {
-    uint16_t vlan_id;
-    struct ether_addr dst_mac;
-    struct ether_addr src_mac;
-    uint16_t ether_type;
-    struct in_addr dst_ipv4;
-    struct in_addr src_ipv4;
     struct in6_addr dst_ipv6;
     struct in6_addr src_ipv6;
-    uint8_t ip_protocol;
+
+    struct filter_flag flags; /* flags indicating what filters are set */
+
+    size_t size;              /* overall size of all packets, suiting filter */
+    size_t count_packets;     /* count of packets that have same filter */
+
+    struct in_addr dst_ipv4;
+    struct in_addr src_ipv4;
+
+    struct ether_addr dst_mac;
+    struct ether_addr src_mac;
+    uint16_t vlan_id;
+    uint16_t ether_type;
     uint16_t dst_tcp;
     uint16_t src_tcp;
     uint16_t dst_udp;
     uint16_t src_udp;
-
-    size_t count_packets;     /* count of packets that have same filter */
-    size_t size;              /* overall size of all packets, suiting filter */
-    struct filter_flag flags; /* flags indicating what filters are set */
+    uint8_t ip_protocol;
 };
 
 /**
