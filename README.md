@@ -9,7 +9,9 @@
 2. Run the server by specifying IP address and port:
     ```bash
     ./server -a <IP> -p <PORT>
-(Example: ./server 0.0.0.0 8080 to listen on all interfaces on port 8080)
+(Example to work on 127.0.0.1 on port 8080:)
+    ```bash
+    sudo ./server -a 127.0.0.1 -p 8080
 
 ## Client Connection
 Users can connect to the server via telnet:
