@@ -19,7 +19,7 @@ Users can connect to the server via telnet:
     telnet <IP> <PORT>
 After connection, filter management commands become available.
 
-##Available Commands
+## Available Commands
 add <key> <value> [<key> <value> ...] - Add filter
 (Example: add src_ipv4 192.168.1.1 dst_tcp 80)
 
@@ -48,7 +48,7 @@ src_tcp/dst_tcp - TCP port
 
 src_udp/dst_udp - UDP port
 
-##Current Limitations
+## Current Limitations
 
 Maximum of 10 active filters
 
