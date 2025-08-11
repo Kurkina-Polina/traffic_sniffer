@@ -321,6 +321,8 @@ print_packet(char const *buffer, size_t bufflen)
 static bool
 check_src_mac(char const *buffer, size_t bufflen, struct filter cur_filter)
 {
+    if (cur_filter.flags.src_mac_flag == 0)
+        return true;
     struct ether_header const *const ether = (struct ether_header const*)buffer;
     uint8_t const* const addr = ether->ether_shost;
     return !memcmp(addr, cur_filter.src_mac.ether_addr_octet, ETHER_ADDR_LEN);
@@ -329,6 +331,8 @@ check_src_mac(char const *buffer, size_t bufflen, struct filter cur_filter)
 static bool
 check_dst_mac(char const *buffer, size_t bufflen, struct filter cur_filter)
 {
+    if (cur_filter.flags.dst_mac_flag == 0)
+        return true;
     struct ether_header const *const ether = (struct ether_header const*)buffer;
     uint8_t const* const addr = ether->ether_dhost;
     return !memcmp(addr, cur_filter.dst_mac.ether_addr_octet, ETHER_ADDR_LEN);
@@ -741,7 +745,7 @@ parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filt
 static bool
 parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.src_mac_flag == 0))
+    if ((strcmp(name_key, "src_mac") == 0) && (new_filter->flags.src_mac_flag == 0))
         {
             struct ether_addr *mac = &(new_filter->src_mac);
             if (!parse_mac(val_key, mac))
@@ -880,27 +884,27 @@ add_filter(char *buff, char *message, size_t message_sz)
     buff[strcspn(buff, "\r\n")] = '\0';
     DPRINTF("buffer |%s|\n", buff);
 
-    char *token = strtok(buff + sizeof(CMD_ADD) - 1, " ");
-    if (!token)
+    char *name_key = strtok(buff + sizeof(CMD_ADD) - 1, " ");
+    if (!name_key)
     {
         strcpy(message, "Error: No filter parameters\n");
         return new_filter;
     }
 
-    while (token != NULL)
+    while (name_key != NULL)
     {
-        char *next_token = strtok(NULL, " ");
-        if (!next_token) {
+        char *val_key = strtok(NULL, " ");
+        if (!val_key) {
             strcpy(message, "Error: No filter\n");
             return empty_filter;
         }
-// FIXME: i< size of keys. keys should be enum structure i guess
         for (size_t i = 0; i < size_keys; i++)
         {
-            if(!array_parsers[i](token, next_token, &new_filter, message))
+            DPRINTF("name_key |%s| val_key |%s| \n", name_key, val_key);
+            if(!array_parsers[i](name_key, val_key, &new_filter, message))
                 return empty_filter;
         }
-        token = strtok(NULL, " ");
+        name_key = strtok(NULL, " ");
     }
     strcpy(message, "success\n");
     return new_filter;
@@ -1092,13 +1096,12 @@ static void
 handle_listen(int* sock_listen, int* sock_client)
 {
 
-    socklen_t sock_client_len;
+    socklen_t sock_client_len = sizeof(struct sockaddr_in);
     struct sockaddr_in clientaddr;
     int fd = accept(*sock_listen, (struct sockaddr*)&clientaddr, &sock_client_len);
     if (fd == -1)
     {
         perror("Failed to accept connection");
-        //FIXME: there are often problems
         return;
     }
 
