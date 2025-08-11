@@ -632,6 +632,178 @@ parse_mac(const char *str, struct ether_addr *mac)
                  &mac->ether_addr_octet[4], &mac->ether_addr_octet[5]) == 6;
 }
 
+//FIXME str value keys should be enum structure i guess
+static bool
+parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "src_ipv4") == 0) && (new_filter->flags.src_ipv4_flag == 0))
+        {
+            int result = inet_pton(AF_INET, val_key, &(new_filter->src_ipv4));
+            if (result<=0) {
+                perror("error: Not in presentation format");
+                printf("%s|%s\n",
+                    val_key, inet_ntoa(new_filter->src_ipv4));
+                strcpy(message, "Error: filter src_ipv4: not in presentation format\n");
+                return false;
+            }
+            new_filter->flags.src_ipv4_flag = 1;
+        }
+    return true;
+}
+
+static bool
+parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "dst_ipv4") == 0) && (new_filter->flags.dst_ipv4_flag == 0))
+        {
+            int result = inet_pton(AF_INET, val_key, &(new_filter->dst_ipv4));
+            if (result<=0) {
+                perror("error: Not in presentation format");
+                printf("%s|%s\n",
+                    val_key, inet_ntoa(new_filter->dst_ipv4));
+                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
+                return false;
+            }
+            new_filter->flags.dst_ipv4_flag = 1;
+        }
+    return true;
+}
+
+static bool
+parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.dst_mac_flag == 0))
+        {
+            struct ether_addr *mac = &(new_filter->dst_mac);
+            if (!parse_mac(val_key, mac))
+            {
+                strcpy(message, "Error: filter dst_mac \n");
+                return false;
+            }
+            new_filter->flags.dst_mac_flag = 1;
+        }
+    return true;
+}
+
+static bool
+parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.src_mac_flag == 0))
+        {
+            struct ether_addr *mac = &(new_filter->src_mac);
+            if (!parse_mac(val_key, mac))
+            {
+                strcpy(message, "Error: filter src_mac \n");
+                return false;
+            }
+            new_filter->flags.src_mac_flag = 1;
+        }
+    return true;
+}
+
+static bool
+parce_ip_protocol(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((new_filter->flags.ip_protocol_flag != 0))
+    {
+        //FIXME: the message can be rewrating. use strncat and and new sz_message
+        //FIXME: in other handles make 2: if- else if
+        strcpy(message, "Error: ip protocol is set already \n");
+        return true;
+    }
+    else if (strcmp(name_key, "ip_protocol") == 0)
+        {
+            new_filter->ip_protocol = (uint8_t)strtoul(val_key, NULL, 0);
+            new_filter->flags.ip_protocol_flag = 1;
+        }
+    return true;
+}
+
+static bool
+parce_ether_type(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.ether_type_flag != 0)
+    {
+        strcpy(message, "Error: ether type is set already. will be ignored \n");
+        return true;
+    }
+    else if ((strcmp(name_key, "ether_type") == 0) && (new_filter->flags.ether_type_flag == 0))
+        {
+            new_filter->ether_type = htons((uint16_t)strtoul(val_key, NULL, 0));
+            new_filter->flags.ether_type_flag = 1;
+        }
+    return true;
+}
+
+static bool
+parce_src_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.src_tcp_flag != 0){
+        strcpy(message, "Error: src tcp is set already. will be ignored \n");
+        return true;
+    }
+    else if (strcmp(name_key, "src_tcp") == 0)
+    {
+        new_filter->src_tcp = htons((uint16_t)strtoul(val_key, NULL, 0));
+        new_filter->flags.src_tcp_flag = 1;
+    }
+    return true;
+}
+
+static bool
+parce_dst_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.dst_tcp_flag != 0){
+        strcpy(message, "Error: dst tcp is set already. will be ignored \n");
+        return true;
+    }
+    else if (strcmp(name_key, "dst_tcp") == 0)
+    {
+        new_filter->dst_tcp = htons((uint16_t)strtoul(val_key, NULL, 0));
+        new_filter->flags.dst_tcp_flag = 1;
+    }
+    return true;
+}
+
+static bool
+parce_src_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.src_udp_flag != 0){
+        strcpy(message, "Error: src udp is set already. will be ignored \n");
+        return true;
+    }
+    else if (strcmp(name_key, "src_udp") == 0)
+    {
+        new_filter->src_udp = htons((uint16_t)strtoul(val_key, NULL, 0));
+        new_filter->flags.src_udp_flag = 1;
+    }
+    return true;
+}
+
+static bool
+parce_dst_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.dst_udp_flag != 0){
+        strcpy(message, "Error: dst udp is set already. will be ignored \n");
+        return true;
+    }
+    else if (strcmp(name_key, "dst_udp") == 0)
+    {
+        new_filter->dst_udp = htons((uint16_t)strtoul(val_key, NULL, 0));
+        new_filter->flags.dst_udp_flag = 1;
+    }
+    return true;
+}
+
+//FIXME: move to the top
+const size_t size_parsers = 10;
+bool (*array_parsers[])(const char *name_key, const char *val_key, struct filter *new_filter, char *message) = {
+    parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parce_ip_protocol,
+    parce_ether_type, parce_src_tcp, parce_dst_tcp, parce_src_udp, parce_dst_udp
+
+};
+
+
 /**
  * Splits the string into tokens and every token compare with keys.
  * Every key set in filers massive and set the flag indicating
@@ -669,88 +841,11 @@ add_filter(char *buff, char *message, size_t message_sz)
             strcpy(message, "Error: No filter\n");
             return empty_filter;
         }
-
-        if ((strcmp(token, "dst_mac") == 0) && (new_filter.flags.dst_mac_flag == 0))
+// FIXME: i< size of keys. keys should be enum structure i guess
+        for (int i = 0; i < size_parsers; i++)
         {
-            if (!parse_mac(next_token, &new_filter.dst_mac))
-            {
-                strcpy(message, "Error: filter dst_mac\n");
+            if(!array_parsers[i](token, next_token, &new_filter, message))
                 return empty_filter;
-            }
-            new_filter.flags.dst_mac_flag = 1;
-        }
-        else if ((strcmp(token, "src_mac") == 0) && (new_filter.flags.src_mac_flag == 0))
-        {
-            if (!parse_mac(next_token, &new_filter.src_mac))
-            {
-                strcpy(message, "Error: filter src_mac\n");
-                return empty_filter;
-            }
-            new_filter.flags.src_mac_flag = 1;
-        }
-        else if ((strcmp(token, "ether_type") == 0) && (new_filter.flags.ether_type_flag == 0))
-        {
-            new_filter.ether_type = htons((uint16_t)strtoul(next_token, NULL, 0));
-            new_filter.flags.ether_type_flag = 1;
-        }
-        else if ((strcmp(token, "dst_ipv4") == 0) && (new_filter.flags.dst_ipv4_flag == 0))
-        {
-            int result = inet_pton(AF_INET, next_token, &new_filter.dst_ipv4);
-            if (result<=0) {
-                perror("error: Not in presentation format");
-                printf("%s|%s\n",
-                    next_token, inet_ntoa(new_filter.dst_ipv4));
-                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
-                return empty_filter;
-            }
-            new_filter.flags.dst_ipv4_flag = 1;
-        }
-        else if ((strcmp(token, "src_ipv4") == 0) && (new_filter.flags.src_ipv4_flag == 0))
-        {
-            int result = inet_pton(AF_INET, next_token, &new_filter.src_ipv4);
-            if (result<=0)
-            {
-                perror("error: Not in presentation format");
-                printf("%s|%s\n", next_token, inet_ntoa(new_filter.src_ipv4));
-                strcpy(message, "Error: filter src_ipv4: not in presentation format\n");
-                return empty_filter;
-            }
-            new_filter.flags.src_ipv4_flag = 1;
-        }
-        else if ((strcmp(token, "ip_protocol") == 0)
-            && (new_filter.flags.ip_protocol_flag == 0))
-        {
-            new_filter.ip_protocol = (uint8_t)strtoul(next_token, NULL, 0);
-            new_filter.flags.ip_protocol_flag = 1;
-        }
-        else if ((strcmp(token, "src_tcp") == 0)
-            && (new_filter.flags.src_tcp_flag == 0))
-        {
-            new_filter.src_tcp = htons((uint16_t)strtoul(next_token, NULL, 0));
-            new_filter.flags.src_tcp_flag = 1;
-        }
-        else if ((strcmp(token, "dst_tcp") == 0)
-            && (new_filter.flags.dst_tcp_flag == 0))
-        {
-            new_filter.dst_tcp = htons((uint16_t)strtoul(next_token, NULL, 0));
-            new_filter.flags.dst_tcp_flag = 1;
-        }
-        else if ((strcmp(token, "src_udp") == 0)
-            && (new_filter.flags.src_udp_flag == 0))
-        {
-            new_filter.src_udp = htons((uint16_t)strtoul(next_token, NULL, 0));
-            new_filter.flags.src_udp_flag = 1;
-        }
-        else if ((strcmp(token, "dst_udp") == 0)
-            && (new_filter.flags.dst_udp_flag == 0))
-        {
-            new_filter.dst_udp = htons((uint16_t)strtoul(next_token, NULL, 0));
-            new_filter.flags.dst_udp_flag = 1;
-        }
-        else
-        {
-            strcpy(message, get_help_message());
-            return empty_filter;
         }
         token = strtok(NULL, " ");
     }
@@ -834,6 +929,11 @@ handle_client_event(int *const sock_client,
             filters[*filters_len] = new_filter;
             *filters_len +=1;
         }
+        else
+        {
+            //FIXME: use strcat instead
+            strcpy(message_send, get_help_message());
+        }
     }
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
         strcpy(message_send, delete_filter(rx_buffer, filters, filters_len));
@@ -899,6 +999,7 @@ setup_sockets(struct pollfd *fds,
         &(int){1}, sizeof(int)) < 0)
     {
         perror("setsockopt(SO_REUSEADDR) failed");
+        //FIXME: make another commit why no return?
     }
 
     if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
@@ -1063,6 +1164,7 @@ command_line(int argc, char *argv[], struct in_addr *ip_server,
                 exit(opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE);
         }
     }
+    //FIXME: why twise?
     if (ip_server->s_addr == 0) {
         fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -1095,7 +1197,7 @@ main(int argc, char *argv[])
     signal(SIGINT, sig_handler);
     command_line(argc, argv, &ip_server, &port_server);
 
-    if (setup_sockets(fds, port_server, ip_server.s_addr))
+    if (setup_sockets(fds, port_server, ip_server.s_addr) != 0)
         return EXIT_FAILURE;
 
     poll_loop(fds, ARRAY_SIZE(fds));
