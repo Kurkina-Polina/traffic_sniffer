@@ -160,7 +160,7 @@ get_statistics(struct filter const *filters,
  * what key is set. If key already is set, next key will be ignored.
  * If some key is invalid or other problems, function returns empty filter.
  *
- * @param buff                 string contain mac address
+ * @param buff                 string contain full ethernet packet
  * @param message[out]         message about the result of work
  * @param message_sz[in]       message size that have been set
  *
@@ -208,13 +208,37 @@ add_filter(char *buff, char *message, size_t message_sz)
 }
 
 /**
- * Delete filter by a number. Not supported yet
+ * Delete filter by a number. Number of filter is taken from buffer.
+ *
+ * @param buff                    string contain message with command and argument
+ * @param filters[out][in]        array of filters, that will be modified
+ * @param filters_len[out][in]    filters len, that will be modified
+ * @param message_send[out]       message about the result of work
+ *
+ * @return bool                   true if success and false if fail
+ *
  */
-char const*
-delete_filter(char const *buff, struct filter *filters,  int *filters_len)
+bool
+delete_filter(char const *buff, struct filter *filters,  int *filters_len, char* message_send)
 {
     //FIXME: filters_len should be int or size_t?
-    return "Not supported\n";
+    char const *num_filter = buff + sizeof(CMD_DEL) - 1;
+    if (!num_filter)
+    {
+        strcpy(message_send, "Error: No number of filter \n");
+        return false;
+    }
+    int int_num_filter = atoi(num_filter)-1;
+    if (int_num_filter < 0 || int_num_filter >= *filters_len)
+    {
+        DPRINTF("len %d number %d \n", *filters_len, int_num_filter);
+        strcpy(message_send, "Error: Invalid number of filter \n");
+        return false;
+    }
+    memmove(&filters[int_num_filter], &filters[int_num_filter+1], (*filters_len - int_num_filter-1)*sizeof(struct filter));
+    *filters_len -= 1;
+    strcpy(message_send, "Successfuly delete \n");
+    return true;
 }
 
 /**
@@ -291,7 +315,7 @@ handle_client_event(int *const sock_client,
         }
     }
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
-        strcpy(message_send, delete_filter(rx_buffer, filters, filters_len));
+        delete_filter(rx_buffer, filters, filters_len, message_send);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
         get_statistics(filters, *filters_len, message_send,
