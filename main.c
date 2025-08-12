@@ -25,9 +25,11 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "printers.h"
 #include "checkers.h"
-#include "filter.h"
-#include "definitions.h"
+#include "parsers.h"
+// #include "filter.h"
+// #include "definitions.h"
 
 /* Is used for creating message from server. */
 #define BUFFER_SIZE (16*1024)
@@ -78,183 +80,6 @@ get_help_message()
     " you can't use key dst_udp twice. Only last will work.\n"
     "Maximum count of filters is 10\n";
 }
-
-/**
- * Print MAC address.
- *
- * @param addr    MAC address in uint8_t
- */
-static void
-print_mac_addr(uint8_t const *addr)
-{
-    printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
-        addr[0], addr[1], addr[2],addr[3],addr[4],addr[5]);
-}
-
-/**
- * Print data of a packet like hexdump.
- *
- * @param data    pointer of start data
- * @param size    size of data
- */
-static void
-print_payload(char const *data, size_t size)
-{
-    if (size <=0 )
-    {
-        printf("No payload");
-        return;
-    }
-    for (size_t i = 0; i < size; i++)
-    {
-        if (i % 16 == 0)
-            printf("%04zx:  ", i);
-
-        printf("%02x ", (unsigned char)data[i]);
-
-        if (i % 16 == 15 || i == size - 1)
-        {
-            if (i % 16 != 15)
-                for (size_t j = 0; j < 15 - (i % 16); j++)
-                    printf("   ");
-
-            printf("  |");
-
-            size_t line_start = i - (i % 16);
-            for (size_t j = line_start; j <= i; j++)
-            {
-                if (data[j] >= 32 && data[j] <= 126)
-                    printf("%c", data[j]);
-                else
-                    printf(".");
-            }
-
-            printf("|\n");
-        }
-    }
-}
-
-/**
- * Print tcp header of a packet.
- *
- * @param buffer    full buffer, received from client
- * @param bufflen   size of buffer
- * @param iphdrlen  size of ip header in bytes
- *
- * @sa print_payload
- */
-static void
-tcp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
-{
-    struct tcphdr const *tcp = (struct tcphdr const*)(buffer +
-        iphdrlen + sizeof(struct ethhdr));
-    printf("tcp Header \n");
-    printf("Source tcp         :   %u\n", ntohs(tcp->th_sport));
-    printf("Destination tcp    :   %u\n", ntohs(tcp->th_dport));
-    char const *tcp_data = buffer + sizeof(struct ethhdr) + iphdrlen + tcp->th_off*IHL_WORD_LEN;
-    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + tcp->th_off*IHL_WORD_LEN);
-    printf("tcp payload        :   %ld bytes\n",  message_len);
-    print_payload(tcp_data, message_len);
-    printf("\n###########################################################");
-    printf("\n\n ");
-}
-
-/**
- * Print udp header of a packet.
- *
- * @param buffer    full buffer, received from client
- * @param bufflen   size of buffer
- * @param iphdrlen  size of ip header in bytes
- *
- * @sa print_payload
- */
-void
-udp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
-{
-    static size_t const udp_header_len = 8;
-    struct udphdr const *udp = (struct udphdr const*)(buffer
-        + iphdrlen + sizeof(struct ethhdr));
-    printf("udp Header \n");
-    printf("Source udp         :   %u\n", ntohs(udp->uh_sport));
-    printf("Destination udp    :   %u\n", ntohs(udp->uh_dport));
-    char const *udp_data = buffer + sizeof(struct ethhdr) + iphdrlen + udp_header_len;
-    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + udp_header_len);
-    printf("udp payload        :   %ld bytes\n",  message_len);
-    print_payload(udp_data, message_len);
-    printf("\n###########################################################");
-    printf("\n\n ");
-}
-
-
-/**
- * Print ip header of a packet.
- *
- * @param buffer    full buffer, received from client
- * @param buf_flen   size of buffer
- *
- * @sa tcp_header udp_header
- */
-void
-ip_header(char const *buffer, size_t buf_flen)
-{
-    struct ip const *const ip_head = (struct ip const*)(buffer
-        + sizeof(struct ether_header));
-    printf("ip Header\n");
-    printf("Version           :    %u\n", ip_head->ip_v);
-    printf("header length     :    %u\n", ip_head->ip_hl);
-    printf("Type of service   :    %u\n", ip_head->ip_tos);
-    printf("protocol          :    %u\n", ip_head->ip_p);
-    printf("Source ip         :    %s\n", inet_ntoa(ip_head->ip_src));
-    printf("Destination ip    :    %s\n",inet_ntoa(ip_head->ip_dst));
-
-    switch(ip_head->ip_p) {
-
-        case IPPROTO_TCP:
-            tcp_header(buffer, buf_flen, ip_head->ip_hl*IHL_WORD_LEN);
-            break;
-
-        case IPPROTO_UDP:
-            udp_header(buffer, buf_flen, ip_head->ip_hl*IHL_WORD_LEN);
-            break;
-
-        default:
-            printf("\n\n");
-    }
-}
-
-/**
- * Print all headers of packet and data.
- *
- * @param buffer    full buffer, received from client
- * @param bufflen   size of buffer
- *
- * @sa ip_header
- */
-void
-print_packet(char const *buffer, size_t bufflen)
-{
-    printf("Ethernet Header \n");
-    struct ether_header const *const ether = (struct ether_header const*)buffer;
-    printf("Destination MAC   :    ");
-    print_mac_addr(ether->ether_dhost);
-    printf("Sourse      MAC   :    ");
-    print_mac_addr(ether->ether_shost);
-
-    printf("Ether type        :    %u\n", ntohs(ether->ether_type));
-
-    switch(ntohs(ether->ether_type))
-    {
-        case ETHERTYPE_IP:
-            ip_header(buffer, bufflen);
-            break;
-
-        default:
-            break;
-    }
-}
-
-
-
 
 
 
@@ -327,183 +152,7 @@ get_statistics(struct filter const *filters,
     }
 }
 
-/**
- * Parse MAC address from string to struct of ether header.
- *
- * @param str                  string contain mac address
- * @param mac[out]             parsed mac address
- *
- */
-static bool
-parse_mac(const char *str, struct ether_addr *mac)
-{
-    return sscanf(str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-                 &mac->ether_addr_octet[0], &mac->ether_addr_octet[1],
-                 &mac->ether_addr_octet[2], &mac->ether_addr_octet[3],
-                 &mac->ether_addr_octet[4], &mac->ether_addr_octet[5]) == 6;
-}
 
-static bool
-parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((strcmp(name_key, "src_ipv4") == 0) && (new_filter->flags.src_ipv4_flag == 0))
-        {
-            int result = inet_pton(AF_INET, val_key, &(new_filter->src_ipv4));
-            if (result<=0) {
-                perror("error: Not in presentation format");
-                printf("%s|%s\n",
-                    val_key, inet_ntoa(new_filter->src_ipv4));
-                strcpy(message, "Error: filter src_ipv4: not in presentation format\n");
-                return false;
-            }
-            new_filter->flags.src_ipv4_flag = 1;
-        }
-    return true;
-}
-
-static bool
-parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((strcmp(name_key, "dst_ipv4") == 0) && (new_filter->flags.dst_ipv4_flag == 0))
-        {
-            int result = inet_pton(AF_INET, val_key, &(new_filter->dst_ipv4));
-            if (result<=0) {
-                perror("error: Not in presentation format");
-                printf("%s|%s\n",
-                    val_key, inet_ntoa(new_filter->dst_ipv4));
-                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
-                return false;
-            }
-            new_filter->flags.dst_ipv4_flag = 1;
-        }
-    return true;
-}
-
-static bool
-parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.dst_mac_flag == 0))
-        {
-            struct ether_addr *mac = &(new_filter->dst_mac);
-            if (!parse_mac(val_key, mac))
-            {
-                strcpy(message, "Error: filter dst_mac \n");
-                return false;
-            }
-            new_filter->flags.dst_mac_flag = 1;
-        }
-    return true;
-}
-
-static bool
-parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((strcmp(name_key, "src_mac") == 0) && (new_filter->flags.src_mac_flag == 0))
-        {
-            struct ether_addr *mac = &(new_filter->src_mac);
-            if (!parse_mac(val_key, mac))
-            {
-                strcpy(message, "Error: filter src_mac \n");
-                return false;
-            }
-            new_filter->flags.src_mac_flag = 1;
-        }
-    return true;
-}
-
-static bool
-parce_ip_protocol(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((new_filter->flags.ip_protocol_flag != 0))
-    {
-        //FIXME: the message can be rewrating. use strncat and and new sz_message or snprintf
-        //FIXME: in other handles make 2: if- else if
-        strcpy(message, "Error: ip protocol is set already \n");
-        return true;
-    }
-    else if (strcmp(name_key, "ip_protocol") == 0)
-        {
-            new_filter->ip_protocol = (uint8_t)strtoul(val_key, NULL, 0);
-            new_filter->flags.ip_protocol_flag = 1;
-        }
-    return true;
-}
-
-static bool
-parce_ether_type(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if (new_filter->flags.ether_type_flag != 0)
-    {
-        strcpy(message, "Error: ether type is set already. will be ignored \n");
-        return true;
-    }
-    else if ((strcmp(name_key, "ether_type") == 0) && (new_filter->flags.ether_type_flag == 0))
-        {
-            new_filter->ether_type = htons((uint16_t)strtoul(val_key, NULL, 0));
-            new_filter->flags.ether_type_flag = 1;
-        }
-    return true;
-}
-
-static bool
-parce_src_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if (new_filter->flags.src_tcp_flag != 0){
-        strcpy(message, "Error: src tcp is set already. will be ignored \n");
-        return true;
-    }
-    else if (strcmp(name_key, "src_tcp") == 0)
-    {
-        new_filter->src_tcp = htons((uint16_t)strtoul(val_key, NULL, 0));
-        new_filter->flags.src_tcp_flag = 1;
-    }
-    return true;
-}
-
-static bool
-parce_dst_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if (new_filter->flags.dst_tcp_flag != 0){
-        strcpy(message, "Error: dst tcp is set already. will be ignored \n");
-        return true;
-    }
-    else if (strcmp(name_key, "dst_tcp") == 0)
-    {
-        new_filter->dst_tcp = htons((uint16_t)strtoul(val_key, NULL, 0));
-        new_filter->flags.dst_tcp_flag = 1;
-    }
-    return true;
-}
-
-static bool
-parce_src_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if (new_filter->flags.src_udp_flag != 0){
-        strcpy(message, "Error: src udp is set already. will be ignored \n");
-        return true;
-    }
-    else if (strcmp(name_key, "src_udp") == 0)
-    {
-        new_filter->src_udp = htons((uint16_t)strtoul(val_key, NULL, 0));
-        new_filter->flags.src_udp_flag = 1;
-    }
-    return true;
-}
-
-static bool
-parce_dst_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if (new_filter->flags.dst_udp_flag != 0){
-        strcpy(message, "Error: dst udp is set already. will be ignored \n");
-        return true;
-    }
-    else if (strcmp(name_key, "dst_udp") == 0)
-    {
-        new_filter->dst_udp = htons((uint16_t)strtoul(val_key, NULL, 0));
-        new_filter->flags.dst_udp_flag = 1;
-    }
-    return true;
-}
 
 /**
  * Splits the string into tokens and every token compare with keys.
@@ -524,8 +173,8 @@ static struct filter
 add_filter(char *buff, char *message, size_t message_sz)
 {
     bool (*array_parsers[])(const char *name_key, const char *val_key, struct filter *new_filter, char *message) = {
-        parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parce_ip_protocol,
-        parce_ether_type, parce_src_tcp, parce_dst_tcp, parce_src_udp, parce_dst_udp
+        parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
+        parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp
     };
     struct filter new_filter = {0};
     static struct filter const empty_filter = {0};
@@ -562,8 +211,9 @@ add_filter(char *buff, char *message, size_t message_sz)
  * Delete filter by a number. Not supported yet
  */
 char const*
-delete_filter(char const *buff, struct filter *filters,  size_t *filters_len)
+delete_filter(char const *buff, struct filter *filters,  int *filters_len)
 {
+    //FIXME: filters_len should be int or size_t?
     return "Not supported\n";
 }
 
