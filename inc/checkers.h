@@ -7,39 +7,33 @@
 
 
 bool
-check_src_mac(char const *buffer, size_t bufflen, struct filter cur_filter);
+check_src_mac(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_dst_mac(char const *buffer, size_t bufflen, struct filter cur_filter);
+check_dst_mac(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_ether_type(char const *buffer, size_t bufflen, struct filter cur_filter);
+check_ether_type(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_src_ipv4(char const *buffer, size_t bufflen,
-    struct filter cur_filter);
+check_src_ipv4(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_dst_ipv4(char const *buffer, size_t bufflen, struct filter cur_filter);
+check_dst_ipv4(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_ip_protocol(char const *buffer, size_t bufflen,
-    struct filter cur_filter);
+check_ip_protocol(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_dst_tcp(char const *buffer, size_t bufflen,
-    struct filter cur_filter);
+check_dst_tcp(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_src_tcp(char const *buffer, size_t bufflen,
-    struct filter cur_filter);
+check_src_tcp(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_dst_udp(char const *buffer, size_t bufflen,
-struct filter cur_filter);
+check_dst_udp(struct filter packet_data, struct filter cur_filter);
 
 bool
-check_src_udp(char const *buffer, size_t bufflen,
-    struct filter cur_filter);
+check_src_udp(struct filter packet_data, struct filter cur_filter);
 
 #endif
