@@ -52,20 +52,26 @@ parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_dat
 {
     struct ether_header ether_head;
     memcpy(&ether_head, buffer, sizeof(ether_head));
+    // FIXME: в теории можно заменить на обычное присваивание
+    // тк структура запакованная и они одинаковые, но насколько это важно не знаю
     memcpy(&(packet_data->dst_mac), &(ether_head.ether_dhost), sizeof(struct ether_addr));
     memcpy(&(packet_data->src_mac), &(ether_head.ether_shost), sizeof(struct ether_addr));
     packet_data->ether_type = ether_head.ether_type;
+
     switch(ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
             parse_packet_ipv4(buffer, bufflen, packet_data, sizeof(struct ether_header));
             break;
+
         case ETHERTYPE_IPV6:
             // parse_packet_ipv6(buffer, bufflen, packet_data);
             break;
+
         case ETHERTYPE_VLAN:
             // parse_packet_vlan(buffer, bufflen, packet_data);
             break;
+
         default:
             break;
     }

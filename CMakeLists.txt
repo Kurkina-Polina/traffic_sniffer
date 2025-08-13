@@ -7,4 +7,4 @@ project(traffic_sniffer)
 include_directories(inc)
 
 # Add an executable target
-add_executable(traffic_sniffer main.c src/checkers.c src/printers.c src/parsers)
+add_executable(traffic_sniffer main.c src/checkers.c src/printers.c src/parsers src/parsers_packet)
