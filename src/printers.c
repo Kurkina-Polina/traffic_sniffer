@@ -10,6 +10,7 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <stdio.h>
+#include <string.h>
 /**
  * Print MAC address.
  *
@@ -77,13 +78,13 @@ print_payload(char const *data, size_t size)
 static void
 tcp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
 {
-    struct tcphdr const *tcp = (struct tcphdr const*)(buffer +
-        iphdrlen + sizeof(struct ethhdr));
+    struct tcphdr tcp_head;
+    memcpy(&tcp_head, buffer + sizeof(struct ethhdr) + iphdrlen, sizeof(struct tcphdr));
     printf("tcp Header \n");
-    printf("Source tcp         :   %u\n", ntohs(tcp->th_sport));
-    printf("Destination tcp    :   %u\n", ntohs(tcp->th_dport));
-    char const *tcp_data = buffer + sizeof(struct ethhdr) + iphdrlen + tcp->th_off*IHL_WORD_LEN;
-    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + tcp->th_off*IHL_WORD_LEN);
+    printf("Source tcp         :   %u\n", ntohs(tcp_head.th_sport));
+    printf("Destination tcp    :   %u\n", ntohs(tcp_head.th_dport));
+    char const *tcp_data = buffer + sizeof(struct ethhdr) + iphdrlen + tcp_head.th_off*IHL_WORD_LEN;
+    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + tcp_head.th_off*IHL_WORD_LEN);
     printf("tcp payload        :   %ld bytes\n",  message_len);
     print_payload(tcp_data, message_len);
     printf("\n###########################################################");
@@ -103,11 +104,11 @@ void
 udp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
 {
     static size_t const udp_header_len = 8;
-    struct udphdr const *udp = (struct udphdr const*)(buffer
-        + iphdrlen + sizeof(struct ethhdr));
+    struct udphdr udp_head;
+    memcpy(&udp_head, buffer + sizeof(struct ethhdr) + iphdrlen, sizeof(struct udphdr));
     printf("udp Header \n");
-    printf("Source udp         :   %u\n", ntohs(udp->uh_sport));
-    printf("Destination udp    :   %u\n", ntohs(udp->uh_dport));
+    printf("Source udp         :   %u\n", ntohs(udp_head.uh_sport));
+    printf("Destination udp    :   %u\n", ntohs(udp_head.uh_dport));
     char const *udp_data = buffer + sizeof(struct ethhdr) + iphdrlen + udp_header_len;
     size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + udp_header_len);
     printf("udp payload        :   %ld bytes\n",  message_len);
@@ -128,24 +129,24 @@ udp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
 void
 ip_header(char const *buffer, size_t buf_flen)
 {
-    struct ip const *const ip_head = (struct ip const*)(buffer
-        + sizeof(struct ether_header));
+    struct ip ip_head;
+    memcpy(&ip_head, buffer + sizeof(struct ethhdr), sizeof(struct ip));
     printf("ip Header\n");
-    printf("Version           :    %u\n", ip_head->ip_v);
-    printf("header length     :    %u\n", ip_head->ip_hl);
-    printf("Type of service   :    %u\n", ip_head->ip_tos);
-    printf("protocol          :    %u\n", ip_head->ip_p);
-    printf("Source ip         :    %s\n", inet_ntoa(ip_head->ip_src));
-    printf("Destination ip    :    %s\n",inet_ntoa(ip_head->ip_dst));
+    printf("Version           :    %u\n", ip_head.ip_v);
+    printf("header length     :    %u\n", ip_head.ip_hl);
+    printf("Type of service   :    %u\n", ip_head.ip_tos);
+    printf("protocol          :    %u\n", ip_head.ip_p);
+    printf("Source ip         :    %s\n", inet_ntoa(ip_head.ip_src));
+    printf("Destination ip    :    %s\n",inet_ntoa(ip_head.ip_dst));
 
-    switch(ip_head->ip_p) {
+    switch(ip_head.ip_p) {
 
         case IPPROTO_TCP:
-            tcp_header(buffer, buf_flen, ip_head->ip_hl*IHL_WORD_LEN);
+            tcp_header(buffer, buf_flen, ip_head.ip_hl*IHL_WORD_LEN);
             break;
 
         case IPPROTO_UDP:
-            udp_header(buffer, buf_flen, ip_head->ip_hl*IHL_WORD_LEN);
+            udp_header(buffer, buf_flen, ip_head.ip_hl*IHL_WORD_LEN);
             break;
 
         default:
@@ -165,15 +166,16 @@ void
 print_packet(char const *buffer, size_t bufflen)
 {
     printf("Ethernet Header \n");
-    struct ether_header const *const ether = (struct ether_header const*)buffer;
+    struct ether_header ether_head;
+    memcpy(&ether_head, buffer, sizeof(ether_head));
     printf("Destination MAC   :    ");
-    print_mac_addr(ether->ether_dhost);
+    print_mac_addr(ether_head.ether_dhost);
     printf("Sourse      MAC   :    ");
-    print_mac_addr(ether->ether_shost);
+    print_mac_addr(ether_head.ether_shost);
 
-    printf("Ether type        :    %u\n", ntohs(ether->ether_type));
+    printf("Ether type        :    %u\n", ntohs(ether_head.ether_type));
 
-    switch(ntohs(ether->ether_type))
+    switch(ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
             ip_header(buffer, bufflen);
