@@ -205,3 +205,16 @@ check_src_udp(struct filter packet_data, struct filter cur_filter)
     }
     return false;
 }
+
+bool
+check_vlan_id(struct filter packet_data, struct filter cur_filter)
+{
+    if (cur_filter.flags.vlan_id_flag == 0)
+        return true;
+    if (packet_data.vlan_id== cur_filter.vlan_id)
+    {
+        DPRINTF("vlan id is suitable%u\n", ntohs(packet_data.src_udp));
+        return true;
+    }
+    return false;
+}

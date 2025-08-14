@@ -12,10 +12,10 @@
 #include <stdio.h>
 
 void
-parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data, size_t const eth_hdr_len)
+parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip ip_head;
-    memcpy(&ip_head, buffer + eth_hdr_len, sizeof(struct ip));
+    memcpy(&ip_head, buffer, sizeof(struct ip));
     packet_data->src_ipv4 = ip_head.ip_src;
     packet_data->dst_ipv4 = ip_head.ip_dst;
     packet_data->ip_protocol = ip_head.ip_p;
@@ -24,14 +24,14 @@ parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data
 
         case IPPROTO_TCP:
             struct tcphdr tcp_head;
-            memcpy(&tcp_head, buffer + eth_hdr_len + ip_head.ip_hl*IHL_WORD_LEN, sizeof(struct tcphdr));
+            memcpy(&tcp_head, buffer + ip_head.ip_hl*IHL_WORD_LEN, sizeof(struct tcphdr));
             packet_data->dst_tcp = tcp_head.th_dport;
             packet_data->src_tcp = tcp_head.th_sport;
             break;
 
         case IPPROTO_UDP:
             struct udphdr udp_head;
-            memcpy(&udp_head, buffer + eth_hdr_len + ip_head.ip_hl*IHL_WORD_LEN, sizeof(struct udphdr));
+            memcpy(&udp_head, buffer + ip_head.ip_hl*IHL_WORD_LEN, sizeof(struct udphdr));
             packet_data->src_udp = udp_head.uh_sport;
             packet_data->dst_udp = udp_head.uh_dport;
             break;
@@ -44,8 +44,38 @@ parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data
 void
 parse_packet_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
 
+
+//buffer это указатель уже на начало данных откуда надо начать читать
 void
-parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
+parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
+{
+    uint16_t vlan_tci;
+    memcpy(&vlan_tci, buffer, sizeof(uint16_t));
+
+    uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
+    packet_data->vlan_id = vlan_id;
+    DPRINTF("VLAN ID: %d\n", packet_data->vlan_id);
+
+    uint16_t ether_type;
+    memcpy(&ether_type, buffer, sizeof(uint16_t));
+    switch(ntohs(ether_type))
+    {
+        case ETHERTYPE_IP:
+            parse_packet_ipv4(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t), packet_data);
+            break;
+
+        case ETHERTYPE_IPV6:
+            // parse_packet_ipv6(buffer, bufflen, packet_data);
+            break;
+
+        case ETHERTYPE_VLAN:
+            parse_packet_vlan(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t), packet_data);
+            break;
+
+        default:
+            break;
+    }
+}
 
 void
 parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_data)
@@ -61,7 +91,7 @@ parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_dat
     switch(ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
-            parse_packet_ipv4(buffer, bufflen, packet_data, sizeof(struct ether_header));
+            parse_packet_ipv4(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header), packet_data);
             break;
 
         case ETHERTYPE_IPV6:
@@ -69,7 +99,7 @@ parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_dat
             break;
 
         case ETHERTYPE_VLAN:
-            // parse_packet_vlan(buffer, bufflen, packet_data);
+            parse_packet_vlan(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header), packet_data);
             break;
 
         default:

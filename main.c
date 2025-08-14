@@ -48,7 +48,7 @@ enum {
 static volatile bool keep_running = 1;
 
 /* Count of all possible keys. */
-const size_t size_keys = 10;
+const size_t size_keys = 11;
 
 
 /**
@@ -61,12 +61,13 @@ get_help_message()
     "add <key> <value>  <key> <value> - add filter\n"
     "print - print statics on filters\n"
     "exit - to close connection\n"
-    "del <number of filter> - delete filter by number - not supported yet\n"
+    "del <number of filter> - delete filter by number\n"
     "\n"
     "possible keys:\n"
     "src_mac\n"
     "dst_mac\n"
     "ether_type\n "
+    "vlan_id\n"
     "ip_protocol\n"
     "dst_ipv4\n"
     "src_ipv4\n"
@@ -101,7 +102,7 @@ data_process(char const *buffer, size_t bufflen,
 {
     bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
     check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
-    check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp
+    check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
     };
 
     struct filter packet_data = {0};
@@ -122,7 +123,7 @@ data_process(char const *buffer, size_t bufflen,
         continue;
 on_fail:
         DPRINTF("NOT SUITABLE  %ld\n", filters[i].count_packets);
-        print_packet(buffer, bufflen);
+        // print_packet(buffer, bufflen);
     }
 }
 
@@ -176,7 +177,7 @@ add_filter(char *buff, char *message, size_t message_sz)
 {
     bool (*array_parsers[])(const char *name_key, const char *val_key, struct filter *new_filter, char *message) = {
         parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
-        parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp
+        parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp, parse_vlan_id,
     };
     struct filter new_filter = {0};
     static struct filter const empty_filter = {0};

@@ -181,3 +181,18 @@ parse_dst_udp(const char *name_key, const char *val_key, struct filter *new_filt
     }
     return true;
 }
+
+bool
+parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.vlan_id_flag != 0){
+        strcpy(message, "Error: vlan flag is set already. will be ignored \n");
+        return true;
+    }
+    else if (strcmp(name_key, "vlan_id") == 0)
+    {
+        new_filter->vlan_id = (uint16_t)strtoul(val_key, NULL, 0);
+        new_filter->flags.vlan_id_flag = 1;
+    }
+    return true;
+}

@@ -41,4 +41,7 @@ parse_src_udp(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_dst_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
 
+bool
+parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+
 #endif
