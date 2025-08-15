@@ -25,6 +25,7 @@ struct filter_flag
     int src_tcp_flag : 1;     /* flag indicates source tcp port is set */
     int dst_udp_flag : 1;     /* flag indicates destination udp port is set */
     int src_udp_flag : 1;     /* flag indicates destination udp port is set */
+    int interface_flag : 1;   /* flag indicates index of interface */
 };
 
 /* Filter contains or not keys. */
@@ -38,11 +39,13 @@ struct filter
     size_t size;              /* overall size of all packets, suiting filter */
     size_t count_packets;     /* count of packets that have same filter */
 
+    struct ether_addr dst_mac;/* destination mac address */
+    struct ether_addr src_mac;/* sourse mac address */
+
     struct in_addr dst_ipv4;  /* destination ip version 4*/
     struct in_addr src_ipv4;  /* sourse ip version 4*/
 
-    struct ether_addr dst_mac;/* destination mac address */
-    struct ether_addr src_mac;/* sourse mac address */
+    int interface;
     uint16_t vlan_id;         /* vlan id */
     uint16_t ether_type;      /* ether type */
     uint16_t dst_tcp;         /* destination tcp port*/

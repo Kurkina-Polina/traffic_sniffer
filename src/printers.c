@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
+#include <net/if.h>
 #include <netinet/if_ether.h>
 #include <netinet/in.h>
 #include <netinet/in.h>
@@ -195,8 +196,12 @@ print_vlan(char const *buffer, size_t bufflen){
  * @sa ip_header
  */
 void
-print_packet(char const *buffer, size_t bufflen)
+print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
 {
+    char ifname[IF_NAMESIZE];
+    if_indextoname(sniffaddr.sll_ifindex, ifname);
+    printf("Interface: %s\n", ifname);
+
     printf("Ethernet Header \n");
 
     struct ether_header ether_head;

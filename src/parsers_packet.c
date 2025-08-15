@@ -79,8 +79,10 @@ parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data
 }
 
 void
-parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_data)
+parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
 {
+    packet_data->interface = sniffaddr.sll_ifindex;
+
     struct ether_header ether_head;
     memcpy(&ether_head, buffer, sizeof(ether_head));
     // FIXME: в теории можно заменить на обычное присваивание

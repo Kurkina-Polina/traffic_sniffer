@@ -66,5 +66,5 @@ print_vlan(char const *buffer, size_t buf_flen);
  * @sa ip_header
  */
 void
-print_packet(char const *buffer, size_t bufflen);
+print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr);
 #endif

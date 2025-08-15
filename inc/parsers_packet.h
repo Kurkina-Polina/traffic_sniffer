@@ -12,5 +12,5 @@ void
 parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 void
-parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_data);
+parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr);
 #endif

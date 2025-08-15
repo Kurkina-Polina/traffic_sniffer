@@ -101,7 +101,7 @@ get_help_message()
  */
 static void
 data_process(char const *buffer, size_t bufflen,
-                  struct filter* filters, size_t filters_len)
+    struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr)
 {
     bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
     check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
@@ -110,7 +110,7 @@ data_process(char const *buffer, size_t bufflen,
 
     struct filter packet_data = {0};
 
-    parse_packet_ether(buffer, bufflen, &packet_data);
+    parse_packet_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     for (size_t i = 0; i < filters_len; i++)
     {
@@ -122,11 +122,11 @@ data_process(char const *buffer, size_t bufflen,
         filters[i].size += bufflen;
         DPRINTF("\nSUITABLE    +1 packet on filter %zu: %ld\n",
             i, filters[i].count_packets);
-        print_packet(buffer, bufflen);
+        print_packet(buffer, bufflen, sniffaddr);
         continue;
 on_fail:
         DPRINTF("\nNOT SUITABLE  %ld\n", filters[i].count_packets);
-        print_packet(buffer, bufflen);
+        print_packet(buffer, bufflen, sniffaddr);
     }
 }
 
@@ -447,6 +447,23 @@ handle_listen(int* sock_listen, int* sock_client)
     *sock_client = fd;
 }
 
+static void
+handle_sniffer(int sock_sniffer, struct filter *filters,  int filters_len)
+{
+    static char buffer[BUFFER_SIZE];
+    struct sockaddr_ll snifaddr;
+    socklen_t snifaddr_len;
+    ssize_t const receive_count = recvfrom(sock_sniffer, buffer, sizeof(buffer), 0, (struct sockaddr*)&snifaddr, &snifaddr_len);
+
+    if (receive_count < 0)
+    {
+        perror("error in reading recvfrom function\n");
+        free(filters);
+        return;
+    }
+    data_process(buffer, receive_count, filters, filters_len, snifaddr);
+}
+
 /**
  * Cycle for poll.
  *
@@ -457,7 +474,6 @@ handle_listen(int* sock_listen, int* sock_client)
 static void
 poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
-    static char buffer[BUFFER_SIZE];
     int filters_len = 0;
     struct filter *filters = (struct filter *)malloc(
         sizeof(struct filter) * MAX_FILTERS);
@@ -485,15 +501,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
 
         if (fds[SNIFFER_INDEX].revents & POLL_IN)
         {
-            ssize_t const receive_count = read(fds[SNIFFER_INDEX].fd, buffer, sizeof(buffer));
-
-            if (receive_count < 0)
-            {
-                perror("error in reading recvfrom function\n");
-                free(filters);
-                return;
-            }
-            data_process(buffer, receive_count, filters, filters_len);
+            handle_sniffer(fds[SNIFFER_INDEX].fd, filters, filters_len);
         }
 
         if (fds[LISTEN_INDEX].revents & POLL_IN)
