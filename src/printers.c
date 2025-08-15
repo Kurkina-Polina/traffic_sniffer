@@ -160,9 +160,7 @@ print_vlan(char const *buffer, size_t bufflen){
     memcpy(&vlan_tci, buffer, sizeof(uint16_t));
 
     uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
-    printf("\n-----------------------\n");
     printf("VLAN ID: %d\n", vlan_id);
-    printf("\n-----------------------\n");
 
     uint16_t ether_type;
     memcpy(&ether_type, buffer+sizeof(uint16_t), sizeof(uint16_t));
@@ -182,7 +180,8 @@ print_vlan(char const *buffer, size_t bufflen){
             break;
 
         default:
-            printf("\n-----------------------\n");
+            printf("\n###########################################################");
+            printf("\n\n ");
             break;
     }
 }

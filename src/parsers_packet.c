@@ -55,7 +55,6 @@ parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data
     uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
     if (packet_data->vlan_id == 0)
         packet_data->vlan_id = vlan_id;
-    DPRINTF("VLAN ID: %d\n", packet_data->vlan_id);
 
     uint16_t ether_type;
     memcpy(&ether_type, buffer+sizeof(uint16_t), sizeof(uint16_t));
