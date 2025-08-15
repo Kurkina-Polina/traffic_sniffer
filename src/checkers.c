@@ -200,7 +200,7 @@ check_src_udp(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.src_udp == cur_filter.src_udp)
     {
-        DPRINTF("udp src is suitable%u\n", ntohs(packet_data.src_udp));
+        DPRINTF("udp src is suitable %u\n", ntohs(packet_data.src_udp));
         return true;
     }
     return false;
@@ -211,9 +211,22 @@ check_vlan_id(struct filter packet_data, struct filter cur_filter)
 {
     if (cur_filter.flags.vlan_id_flag == 0)
         return true;
-    if (packet_data.vlan_id== cur_filter.vlan_id)
+    if (packet_data.vlan_id == cur_filter.vlan_id)
     {
-        DPRINTF("vlan id is suitable%u\n", ntohs(packet_data.src_udp));
+        DPRINTF("vlan id is suitable %u\n", packet_data.vlan_id);
+        return true;
+    }
+    return false;
+}
+
+bool
+check_interface(struct filter packet_data, struct filter cur_filter)
+{
+    if (cur_filter.flags.interface_flag == 0)
+        return true;
+    if (packet_data.interface == cur_filter.interface)
+    {
+        DPRINTF("interface is suitable %u\n", packet_data.interface);
         return true;
     }
     return false;

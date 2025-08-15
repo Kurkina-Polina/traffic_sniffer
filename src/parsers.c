@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+#include <net/if.h>
 
 /**
  * Parse MAC address from string to struct of ether header.
@@ -193,6 +194,21 @@ parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filt
     {
         new_filter->vlan_id = (uint16_t)strtoul(val_key, NULL, 0);
         new_filter->flags.vlan_id_flag = 1;
+    }
+    return true;
+}
+
+bool
+parse_interface(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if (new_filter->flags.interface_flag != 0){
+        strcpy(message, "Error: interface is set already. will be ignored \n");
+        return true;
+    }
+    else if (strcmp(name_key, "interface") == 0)
+    {
+        new_filter->interface = if_nametoindex(val_key);
+        new_filter->flags.interface_flag = 1;
     }
     return true;
 }

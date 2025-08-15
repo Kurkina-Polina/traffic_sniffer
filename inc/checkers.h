@@ -39,4 +39,7 @@ check_src_udp(struct filter packet_data, struct filter cur_filter);
 bool
 check_vlan_id(struct filter packet_data, struct filter cur_filter);
 
+bool
+check_interface(struct filter packet_data, struct filter cur_filter);
+
 #endif

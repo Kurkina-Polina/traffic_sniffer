@@ -25,31 +25,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "definitions.h"
 #include "printers.h"
 #include "checkers.h"
 #include "parsers.h"
 #include "parsers_packet.h"
-// #include "filter.h"
-// #include "definitions.h"
-
-/* Is used for creating message from server. */
-#define BUFFER_SIZE (16*1024)
-
-/* Indicator if socket is invalid. */
-#define INVALID_SOCKET (-1)
-/* Indexes of sockets for poll. */
-enum {
-    SNIFFER_INDEX = 0,      /* socket capturing all packets and filtering them */
-    LISTEN_INDEX = 1,       /* socket listening for incoming connections */
-    CLIENT_INDEX = 2        /* for client communication */
-};
-
-/* Flag for end program. */
-static volatile bool keep_running = 1;
-
-/* Count of all possible keys. */
-const size_t size_keys = 11;
-
 
 /**
  *  Returns message that contains API info that client may use
@@ -106,6 +87,7 @@ data_process(char const *buffer, size_t bufflen,
     bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
     check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
     check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
+    check_interface,
     };
 
     struct filter packet_data = {0};
@@ -114,7 +96,7 @@ data_process(char const *buffer, size_t bufflen,
 
     for (size_t i = 0; i < filters_len; i++)
     {
-        for (size_t j = 0; j < size_keys; j++){
+        for (size_t j = 0; j < KEYS_COUNT; j++){
             if (!array_checks[j](packet_data, filters[i]))
                 goto on_fail;
         }
@@ -181,6 +163,7 @@ add_filter(char *buff, char *message, size_t message_sz)
     bool (*array_parsers[])(const char *name_key, const char *val_key, struct filter *new_filter, char *message) = {
         parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
         parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp, parse_vlan_id,
+        parse_interface,
     };
     struct filter new_filter = {0};
     static struct filter const empty_filter = {0};
@@ -201,9 +184,9 @@ add_filter(char *buff, char *message, size_t message_sz)
             strcpy(message, "Error: No filter\n");
             return empty_filter;
         }
-        for (size_t i = 0; i < size_keys; i++)
+        DPRINTF("name_key |%s| val_key |%s| \n", name_key, val_key);
+        for (size_t i = 0; i < KEYS_COUNT; i++)
         {
-            DPRINTF("name_key |%s| val_key |%s| \n", name_key, val_key);
             if(!array_parsers[i](name_key, val_key, &new_filter, message))
                 return empty_filter;
         }
