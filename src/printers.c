@@ -165,7 +165,7 @@ print_vlan(char const *buffer, size_t bufflen){
     printf("\n-----------------------\n");
 
     uint16_t ether_type;
-    memcpy(&ether_type, buffer, sizeof(uint16_t));
+    memcpy(&ether_type, buffer+sizeof(uint16_t), sizeof(uint16_t));
     printf("Ether type        :    0x%04x\n", ntohs(ether_type));
     switch(ntohs(ether_type))
     {
@@ -199,6 +199,7 @@ void
 print_packet(char const *buffer, size_t bufflen)
 {
     printf("Ethernet Header \n");
+
     struct ether_header ether_head;
     memcpy(&ether_head, buffer, sizeof(ether_head));
     printf("Destination MAC   :    ");
@@ -206,13 +207,18 @@ print_packet(char const *buffer, size_t bufflen)
     printf("Sourse      MAC   :    ");
     print_mac_addr(ether_head.ether_shost);
 
-    printf("Ether type        :    %u\n", ntohs(ether_head.ether_type));
-
     switch(ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
-            ip_header(buffer, bufflen);
+            printf("Ether type        :    0x%04x\n", ntohs(ether_head.ether_type));
+            ip_header(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header));
             break;
+
+        case ETHERTYPE_VLAN:
+            printf("TPID              :    0x%04x\n", ntohs(ether_head.ether_type));
+            print_vlan(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header));
+            break;
+
 
         default:
             break;

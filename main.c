@@ -57,13 +57,15 @@ const size_t size_keys = 11;
 static char const*
 get_help_message()
 {
-    return "Usage: "
+    return "\n--------------------------------------\n"
+    "Usage: "
     "add <key> <value>  <key> <value> - add filter\n"
     "print - print statics on filters\n"
     "exit - to close connection\n"
     "del <number of filter> - delete filter by number\n"
     "\n"
     "possible keys:\n"
+    "\n"
     "src_mac\n"
     "dst_mac\n"
     "ether_type\n "
@@ -80,7 +82,8 @@ get_help_message()
     "\n"
     "On one filter you can use only one same keys:"
     " you can't use key dst_udp twice. Only last will work.\n"
-    "Maximum count of filters is 10\n";
+    "Maximum count of filters is 10\n"
+    "\n--------------------------------------\n";
 }
 
 /**

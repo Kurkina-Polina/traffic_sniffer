@@ -53,15 +53,17 @@ parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data
     memcpy(&vlan_tci, buffer, sizeof(uint16_t));
 
     uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
-    packet_data->vlan_id = vlan_id;
+    if (packet_data->vlan_id == 0)
+        packet_data->vlan_id = vlan_id;
     DPRINTF("VLAN ID: %d\n", packet_data->vlan_id);
 
     uint16_t ether_type;
-    memcpy(&ether_type, buffer, sizeof(uint16_t));
+    memcpy(&ether_type, buffer+sizeof(uint16_t), sizeof(uint16_t));
+    packet_data->ether_type = ether_type;
     switch(ntohs(ether_type))
     {
         case ETHERTYPE_IP:
-            parse_packet_ipv4(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t), packet_data);
+            parse_packet_ipv4(buffer+sizeof(vlan_id)+sizeof(ether_type), bufflen-sizeof(uint16_t), packet_data);
             break;
 
         case ETHERTYPE_IPV6:
@@ -69,7 +71,7 @@ parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data
             break;
 
         case ETHERTYPE_VLAN:
-            parse_packet_vlan(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t), packet_data);
+            parse_packet_vlan(buffer+sizeof(vlan_id)+sizeof(ether_type), bufflen-sizeof(uint16_t), packet_data);
             break;
 
         default:
