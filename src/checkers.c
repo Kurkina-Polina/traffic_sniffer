@@ -64,7 +64,7 @@ check_ether_type(struct filter packet_data, struct filter cur_filter)
 
     if(packet_data.ether_type == cur_filter.ether_type)
     {
-        DPRINTF("it is %u == %u\n", ntohs(packet_data.ether_type), ntohs(cur_filter.ether_type));
+        DPRINTF("it is 0x%04x == 0x%04x\n", ntohs(packet_data.ether_type), ntohs(cur_filter.ether_type));
         return true;
     }
     return false;

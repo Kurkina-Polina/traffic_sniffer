@@ -29,7 +29,7 @@ print_payload(char const *data, size_t size);
  * @sa print_payload
  */
 static void
-tcp_header(char const *buffer, size_t bufflen, size_t iphdrlen);
+tcp_header(char const *buffer, size_t bufflen);
 
 /**
  * Print udp header of a packet.
@@ -41,7 +41,7 @@ tcp_header(char const *buffer, size_t bufflen, size_t iphdrlen);
  * @sa print_payload
  */
 void
-udp_header(char const *buffer, size_t bufflen, size_t iphdrlen);
+udp_header(char const *buffer, size_t bufflen);
 
 /**
  * Print ip header of a packet.
@@ -53,6 +53,9 @@ udp_header(char const *buffer, size_t bufflen, size_t iphdrlen);
  */
 void
 ip_header(char const *buffer, size_t buf_flen);
+
+void
+print_vlan(char const *buffer, size_t buf_flen);
 
 /**
  * Print all headers of packet and data.

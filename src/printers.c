@@ -69,22 +69,22 @@ print_payload(char const *data, size_t size)
 /**
  * Print tcp header of a packet.
  *
- * @param buffer    full buffer, received from client
+ * @param buffer    buffer that starts with tcp head
  * @param bufflen   size of buffer
  * @param iphdrlen  size of ip header in bytes
  *
  * @sa print_payload
  */
 static void
-tcp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
+tcp_header(char const *buffer, size_t bufflen)
 {
     struct tcphdr tcp_head;
-    memcpy(&tcp_head, buffer + sizeof(struct ethhdr) + iphdrlen, sizeof(struct tcphdr));
+    memcpy(&tcp_head, buffer, sizeof(struct tcphdr));
     printf("tcp Header \n");
     printf("Source tcp         :   %u\n", ntohs(tcp_head.th_sport));
     printf("Destination tcp    :   %u\n", ntohs(tcp_head.th_dport));
-    char const *tcp_data = buffer + sizeof(struct ethhdr) + iphdrlen + tcp_head.th_off*IHL_WORD_LEN;
-    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + tcp_head.th_off*IHL_WORD_LEN);
+    char const *tcp_data = buffer + tcp_head.th_off*IHL_WORD_LEN;
+    size_t message_len = bufflen - tcp_head.th_off*IHL_WORD_LEN;
     printf("tcp payload        :   %ld bytes\n",  message_len);
     print_payload(tcp_data, message_len);
     printf("\n###########################################################");
@@ -94,23 +94,23 @@ tcp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
 /**
  * Print udp header of a packet.
  *
- * @param buffer    full buffer, received from client
+ * @param buffer     buffer that starts with tcp head
  * @param bufflen   size of buffer
  * @param iphdrlen  size of ip header in bytes
  *
  * @sa print_payload
  */
 void
-udp_header(char const *buffer, size_t bufflen, size_t iphdrlen)
+udp_header(char const *buffer, size_t bufflen)
 {
     static size_t const udp_header_len = 8;
     struct udphdr udp_head;
-    memcpy(&udp_head, buffer + sizeof(struct ethhdr) + iphdrlen, sizeof(struct udphdr));
+    memcpy(&udp_head, buffer , sizeof(struct udphdr));
     printf("udp Header \n");
     printf("Source udp         :   %u\n", ntohs(udp_head.uh_sport));
     printf("Destination udp    :   %u\n", ntohs(udp_head.uh_dport));
-    char const *udp_data = buffer + sizeof(struct ethhdr) + iphdrlen + udp_header_len;
-    size_t message_len = bufflen - (sizeof(struct ethhdr) + iphdrlen + udp_header_len);
+    char const *udp_data = buffer + udp_header_len;
+    size_t message_len = bufflen - udp_header_len;
     printf("udp payload        :   %ld bytes\n",  message_len);
     print_payload(udp_data, message_len);
     printf("\n###########################################################");
@@ -130,7 +130,7 @@ void
 ip_header(char const *buffer, size_t buf_flen)
 {
     struct ip ip_head;
-    memcpy(&ip_head, buffer + sizeof(struct ethhdr), sizeof(struct ip));
+    memcpy(&ip_head, buffer, sizeof(struct ip));
     printf("ip Header\n");
     printf("Version           :    %u\n", ip_head.ip_v);
     printf("header length     :    %u\n", ip_head.ip_hl);
@@ -142,15 +142,48 @@ ip_header(char const *buffer, size_t buf_flen)
     switch(ip_head.ip_p) {
 
         case IPPROTO_TCP:
-            tcp_header(buffer, buf_flen, ip_head.ip_hl*IHL_WORD_LEN);
+            tcp_header(buffer + ip_head.ip_hl*IHL_WORD_LEN, buf_flen - ip_head.ip_hl*IHL_WORD_LEN);
             break;
 
         case IPPROTO_UDP:
-            udp_header(buffer, buf_flen, ip_head.ip_hl*IHL_WORD_LEN);
+            udp_header(buffer + ip_head.ip_hl*IHL_WORD_LEN, buf_flen - ip_head.ip_hl*IHL_WORD_LEN);
             break;
 
         default:
             printf("\n\n");
+    }
+}
+
+void
+print_vlan(char const *buffer, size_t bufflen){
+    uint16_t vlan_tci;
+    memcpy(&vlan_tci, buffer, sizeof(uint16_t));
+
+    uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
+    printf("\n-----------------------\n");
+    printf("VLAN ID: %d\n", vlan_id);
+    printf("\n-----------------------\n");
+
+    uint16_t ether_type;
+    memcpy(&ether_type, buffer, sizeof(uint16_t));
+    printf("Ether type        :    0x%04x\n", ntohs(ether_type));
+    switch(ntohs(ether_type))
+    {
+        case ETHERTYPE_IP:
+            ip_header(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t));
+            break;
+
+        case ETHERTYPE_IPV6:
+            // ipv6_header(buffer, bufflen);
+            break;
+
+        case ETHERTYPE_VLAN:
+            print_vlan(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t));
+            break;
+
+        default:
+            printf("\n-----------------------\n");
+            break;
     }
 }
 
