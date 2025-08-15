@@ -348,72 +348,6 @@ handle_client_event(int *const sock_client,
 }
 
 /**
- * Set up sockets, addresses and structure for poll.
- *
- * @param fds                  opened socket that receive info
- * @param port_server          port on which server works
- * @param ip_server            ip address on which server works
- *
- * @return                     0 if success and -1 if fail
- *
- */
-int
-setup_sockets(struct pollfd *fds,
-    uint16_t port_server, uint32_t ip_server)
-{
-    int sock_sniffer;
-    int sock_listen;
-    struct sockaddr_in servaddr = {
-        .sin_family = AF_INET,
-        .sin_addr = { .s_addr = ip_server, },
-        .sin_port = port_server,
-    };
-
-    if ((sock_sniffer = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
-        perror("failed to create sniffer socket\n");
-        return errno;
-    }
-    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
-        perror("failed to create listen socket\n");
-        close(sock_sniffer);
-        return errno;
-    }
-
-
-    if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR,
-        &(int){1}, sizeof(int)) < 0)
-    {
-        perror("setsockopt(SO_REUSEADDR) failed");
-        //FIXME: make another commit why no return?
-    }
-
-    if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
-    {
-        perror("socket bind failed...\n");
-        close(sock_sniffer);
-        close(sock_listen);
-        return -1;
-    }
-
-    if ((listen(sock_listen, 5)) != 0)
-    {
-        perror("Listen failed...\n");
-        close(sock_sniffer);
-        close(sock_listen);
-        return -1;
-    }
-
-    fds[SNIFFER_INDEX].fd = sock_sniffer;
-    fds[SNIFFER_INDEX].events = POLL_IN;
-    fds[LISTEN_INDEX].fd = sock_listen;
-    fds[LISTEN_INDEX].events = POLL_IN;
-    fds[CLIENT_INDEX].fd = INVALID_SOCKET;
-    fds[CLIENT_INDEX].events = POLL_IN;
-
-    return 0;
-}
-
-/**
  * Handle the listen socket if there is signal to connect.
  *
  * @param sock_listen          listening socket
@@ -522,6 +456,72 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
         }
     }
     free(filters);
+}
+
+/**
+ * Set up sockets, addresses and structure for poll.
+ *
+ * @param fds                  opened socket that receive info
+ * @param port_server          port on which server works
+ * @param ip_server            ip address on which server works
+ *
+ * @return                     0 if success and -1 if fail
+ *
+ */
+int
+setup_sockets(struct pollfd *fds,
+    uint16_t port_server, uint32_t ip_server)
+{
+    int sock_sniffer;
+    int sock_listen;
+    struct sockaddr_in servaddr = {
+        .sin_family = AF_INET,
+        .sin_addr = { .s_addr = ip_server, },
+        .sin_port = port_server,
+    };
+
+    if ((sock_sniffer = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
+        perror("failed to create sniffer socket\n");
+        return errno;
+    }
+    if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
+        perror("failed to create listen socket\n");
+        close(sock_sniffer);
+        return errno;
+    }
+
+
+    if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR,
+        &(int){1}, sizeof(int)) < 0)
+    {
+        perror("setsockopt(SO_REUSEADDR) failed");
+        //FIXME: make another commit why no return?
+    }
+
+    if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
+    {
+        perror("socket bind failed...\n");
+        close(sock_sniffer);
+        close(sock_listen);
+        return -1;
+    }
+
+    if ((listen(sock_listen, 5)) != 0)
+    {
+        perror("Listen failed...\n");
+        close(sock_sniffer);
+        close(sock_listen);
+        return -1;
+    }
+
+    fds[SNIFFER_INDEX].fd = sock_sniffer;
+    fds[SNIFFER_INDEX].events = POLL_IN;
+    fds[LISTEN_INDEX].fd = sock_listen;
+    fds[LISTEN_INDEX].events = POLL_IN;
+    fds[CLIENT_INDEX].fd = INVALID_SOCKET;
+    fds[CLIENT_INDEX].events = POLL_IN;
+
+    return 0;
 }
 
 /**
