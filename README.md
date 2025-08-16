@@ -35,6 +35,9 @@ src_mac - source MAC
 
 dst_mac - destination MAC
 
+vlan_id - Vlan id 
+
+interface - Name of interface
 
 ether_type - Ethernet frame type
 
