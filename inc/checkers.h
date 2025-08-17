@@ -7,45 +7,45 @@
 
 
 bool
-check_src_mac(struct filter packet_data, struct filter cur_filter);
+check_src_mac(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_dst_mac(struct filter packet_data, struct filter cur_filter);
+check_dst_mac(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_ether_type(struct filter packet_data, struct filter cur_filter);
+check_ether_type(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_src_ipv4(struct filter packet_data, struct filter cur_filter);
+check_src_ipv4(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_dst_ipv4(struct filter packet_data, struct filter cur_filter);
+check_dst_ipv4(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_src_ipv6(struct filter packet_data, struct filter cur_filter);
+check_src_ipv6(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_dst_ipv6(struct filter packet_data, struct filter cur_filter);
+check_dst_ipv6(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_ip_protocol(struct filter packet_data, struct filter cur_filter);
+check_ip_protocol(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_dst_tcp(struct filter packet_data, struct filter cur_filter);
+check_dst_tcp(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_src_tcp(struct filter packet_data, struct filter cur_filter);
+check_src_tcp(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_dst_udp(struct filter packet_data, struct filter cur_filter);
+check_dst_udp(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_src_udp(struct filter packet_data, struct filter cur_filter);
+check_src_udp(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_vlan_id(struct filter packet_data, struct filter cur_filter);
+check_vlan_id(const struct filter packet_data, const struct filter cur_filter);
 
 bool
-check_interface(struct filter packet_data, struct filter cur_filter);
+check_interface(const struct filter packet_data, const struct filter cur_filter);
 
 #endif

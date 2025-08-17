@@ -1,7 +1,7 @@
 #include "handles_sockets.h"
 #include "checkers.h"
 #include "handles_user_input.h"
-#include "parsers_packet.h"
+#include "dissecters.h"
 #include "printers.h"
 #include "get_help.h"
 #include <errno.h>
@@ -40,7 +40,7 @@ sig_handler(int unused)
 
 static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter)
 {
-    bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
+    bool (*array_checks[])(const struct filter packet_data, const struct filter cur_filter) = {
         check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
         check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
         check_interface, check_dst_ipv6, check_src_ipv6,
@@ -59,7 +59,7 @@ data_process(char const *buffer, size_t bufflen,
 {
     /* Unpacking packet to filter structure for simple comparing. */
     struct filter packet_data = {0};
-    parse_packet_ether(buffer, bufflen, &packet_data, sniffaddr);
+    dissect_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     for (size_t i = 0; i < filters_len; i++)
     {
