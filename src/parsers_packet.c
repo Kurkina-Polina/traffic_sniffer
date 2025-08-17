@@ -5,11 +5,29 @@
 #include <net/ethernet.h>
 #include <netinet/if_ether.h>
 #include <netinet/in.h>
-#include <netinet/in.h>
+#include <netinet/ip6.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <stdio.h>
+
+void
+parse_packet_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
+{
+    struct tcphdr tcp_head;
+    memcpy(&tcp_head, buffer, sizeof(struct tcphdr));
+    packet_data->dst_tcp = tcp_head.th_dport;
+    packet_data->src_tcp = tcp_head.th_sport;
+}
+
+void
+parse_packet_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
+{
+    struct udphdr udp_head;
+    memcpy(&udp_head, buffer, sizeof(struct udphdr));
+    packet_data->src_udp = udp_head.uh_sport;
+    packet_data->dst_udp = udp_head.uh_dport;
+}
 
 void
 parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
@@ -20,20 +38,14 @@ parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data
     packet_data->dst_ipv4 = ip_head.ip_dst;
     packet_data->ip_protocol = ip_head.ip_p;
 
-    switch(ip_head.ip_p) {
-
+    switch(ip_head.ip_p)
+    {
         case IPPROTO_TCP:
-            struct tcphdr tcp_head;
-            memcpy(&tcp_head, buffer + ip_head.ip_hl*IHL_WORD_LEN, sizeof(struct tcphdr));
-            packet_data->dst_tcp = tcp_head.th_dport;
-            packet_data->src_tcp = tcp_head.th_sport;
+            parse_packet_tcp(buffer + ip_head.ip_hl * IHL_WORD_LEN, bufflen - ip_head.ip_hl * IHL_WORD_LEN, packet_data);
             break;
 
         case IPPROTO_UDP:
-            struct udphdr udp_head;
-            memcpy(&udp_head, buffer + ip_head.ip_hl*IHL_WORD_LEN, sizeof(struct udphdr));
-            packet_data->src_udp = udp_head.uh_sport;
-            packet_data->dst_udp = udp_head.uh_dport;
+            parse_packet_udp(buffer + ip_head.ip_hl * IHL_WORD_LEN, bufflen - ip_head.ip_hl * IHL_WORD_LEN, packet_data);
             break;
 
         default:
@@ -42,7 +54,65 @@ parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data
 }
 
 void
-parse_packet_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
+parse_packet_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data){
+    struct ip6_hdr  ip6_head;
+    memcpy(&ip6_head, buffer, sizeof(struct ip6_hdr));
+    packet_data->src_ipv6 = ip6_head.ip6_src;
+    packet_data->dst_ipv6 = ip6_head.ip6_dst;
+    packet_data->ip_protocol = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
+
+
+    char ipv6_src_addr_string[INET6_ADDRSTRLEN];
+    if (inet_ntop(AF_INET6, &packet_data->src_ipv6, ipv6_src_addr_string, INET6_ADDRSTRLEN) == NULL) {
+        perror("inet_ntop");
+        return;
+    }
+    printf("IPv6 src Address: %s\n", ipv6_src_addr_string);
+    char ipv6_dst_addr_string[INET6_ADDRSTRLEN];
+    if (inet_ntop(AF_INET6, &packet_data->dst_ipv6, ipv6_dst_addr_string, INET6_ADDRSTRLEN) == NULL) {
+        perror("inet_ntop");
+        return;
+    }
+    printf("IPv6 dst Address: %s\n", ipv6_dst_addr_string);
+
+    size_t offset = sizeof(struct ip6_hdr);
+    static const int IP6_HEADER_UNIT_SIZE = 8;
+
+
+    uint8_t next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    while (offset < bufflen) {
+        printf("ipv6 protocol: %u", next_header);
+        switch (next_header) {
+            case IPPROTO_HOPOPTS:    /* Hop-by-Hop options */
+            case IPPROTO_ROUTING:    /* Routing header */
+            case IPPROTO_FRAGMENT:   /* Fragmentation header */
+            case IPPROTO_ESP:        /* Encapsulating Security Payload */
+            case IPPROTO_AH:         /* Authentication Header */
+            case IPPROTO_DSTOPTS:    /* Destination Options */
+            {
+                if (offset + IP6_HEADER_UNIT_SIZE > bufflen)
+                    return;
+                struct ip6_ext ext;
+                memcpy(&ext, buffer + offset, sizeof(struct ip6_ext));
+                next_header = ext.ip6e_nxt;
+                offset += (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE;
+                break;
+            }
+            case IPPROTO_TCP:
+                if (offset + sizeof(struct tcphdr) <= bufflen) {
+                    parse_packet_tcp(buffer + offset, bufflen - offset, packet_data);
+                }
+                return;
+            case IPPROTO_UDP:
+                if (offset + sizeof(struct udphdr) <= bufflen) {
+                    parse_packet_udp(buffer + offset, bufflen - offset, packet_data);
+                }
+                return;
+            default:
+                return; /* unknown protocol */
+        }
+    }
+}
 
 
 //buffer это указатель уже на начало данных откуда надо начать читать
@@ -66,7 +136,7 @@ parse_packet_vlan(char const *buffer, size_t bufflen, struct filter *packet_data
             break;
 
         case ETHERTYPE_IPV6:
-            // parse_packet_ipv6(buffer, bufflen, packet_data);
+            parse_packet_ipv6(buffer+sizeof(vlan_id)+sizeof(ether_type), bufflen-sizeof(uint16_t), packet_data);
             break;
 
         case ETHERTYPE_VLAN:
@@ -98,7 +168,7 @@ parse_packet_ether(char const *buffer, size_t bufflen, struct filter *packet_dat
             break;
 
         case ETHERTYPE_IPV6:
-            // parse_packet_ipv6(buffer, bufflen, packet_data);
+            parse_packet_ipv6(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header), packet_data);
             break;
 
         case ETHERTYPE_VLAN:

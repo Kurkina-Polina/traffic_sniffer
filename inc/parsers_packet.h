@@ -2,6 +2,13 @@
 #define PARSERS_PACKET_H
 #include "filter.h"
 #include "definitions.h"
+
+void
+parse_packet_tcp(char const *buffer, size_t bufflen, struct filter *packet_data);
+
+void
+parse_packet_udp(char const *buffer, size_t bufflen, struct filter *packet_data);
+
 void
 parse_packet_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data);
 

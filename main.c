@@ -102,13 +102,13 @@ data_process(char const *buffer, size_t bufflen,
         }
         filters[i].count_packets += 1;
         filters[i].size += bufflen;
-        DPRINTF("\nSUITABLE    +1 packet on filter %zu: %ld\n",
-            i, filters[i].count_packets);
-        print_packet(buffer, bufflen, sniffaddr);
+        // DPRINTF("\nSUITABLE    +1 packet on filter %zu: %ld\n",
+        //     i, filters[i].count_packets);
+        // print_packet(buffer, bufflen, sniffaddr);
         continue;
 on_fail:
-        DPRINTF("\nNOT SUITABLE  %ld\n", filters[i].count_packets);
-        print_packet(buffer, bufflen, sniffaddr);
+        // DPRINTF("\nNOT SUITABLE  %ld\n", filters[i].count_packets);
+        // print_packet(buffer, bufflen, sniffaddr);
     }
 }
 
