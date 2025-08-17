@@ -87,7 +87,7 @@ data_process(char const *buffer, size_t bufflen,
     bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
     check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
     check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
-    check_interface,
+    check_interface, check_dst_ipv6, check_src_ipv6,
     };
 
     struct filter packet_data = {0};
@@ -102,13 +102,13 @@ data_process(char const *buffer, size_t bufflen,
         }
         filters[i].count_packets += 1;
         filters[i].size += bufflen;
-        // DPRINTF("\nSUITABLE    +1 packet on filter %zu: %ld\n",
-        //     i, filters[i].count_packets);
-        // print_packet(buffer, bufflen, sniffaddr);
+        DPRINTF("\nSUITABLE    +1 packet on filter %zu: %ld\n",
+            i, filters[i].count_packets);
+        print_packet(buffer, bufflen, sniffaddr);
         continue;
 on_fail:
-        // DPRINTF("\nNOT SUITABLE  %ld\n", filters[i].count_packets);
-        // print_packet(buffer, bufflen, sniffaddr);
+        DPRINTF("\nNOT SUITABLE  %ld\n", filters[i].count_packets);
+        print_packet(buffer, bufflen, sniffaddr);
     }
 }
 
@@ -163,7 +163,7 @@ add_filter(char *buff, char *message, size_t message_sz)
     bool (*array_parsers[])(const char *name_key, const char *val_key, struct filter *new_filter, char *message) = {
         parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
         parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp, parse_vlan_id,
-        parse_interface,
+        parse_interface, parse_dst_ipv6, parse_src_ipv6,
     };
     struct filter new_filter = {0};
     static struct filter const empty_filter = {0};
@@ -208,9 +208,8 @@ add_filter(char *buff, char *message, size_t message_sz)
  *
  */
 bool
-delete_filter(char const *buff, struct filter *filters,  int *filters_len, char* message_send)
+delete_filter(char const *buff, struct filter *filters,  size_t *filters_len, char* message_send)
 {
-    //FIXME: filters_len should be int or size_t?
     char const *num_filter = buff + sizeof(CMD_DEL) - 1;
     if (!num_filter)
     {
@@ -220,7 +219,7 @@ delete_filter(char const *buff, struct filter *filters,  int *filters_len, char*
     int int_num_filter = atoi(num_filter)-1;
     if (int_num_filter < 0 || int_num_filter >= *filters_len)
     {
-        DPRINTF("len %d number %d \n", *filters_len, int_num_filter);
+        DPRINTF("len %ld number %d \n", *filters_len, int_num_filter);
         strcpy(message_send, "Error: Invalid number of filter \n");
         return false;
     }
@@ -269,7 +268,7 @@ do_send(int fd, char const *const data, size_t sz)
  */
 static void
 handle_client_event(int *const sock_client,
-    struct filter *filters,  int *filters_len)
+    struct filter *filters,  size_t *filters_len)
 {
     char rx_buffer[BUFFER_SIZE] = {};
     static char message_send[BUFFER_SIZE];
@@ -365,7 +364,7 @@ handle_listen(int* sock_listen, int* sock_client)
 }
 
 static void
-handle_sniffer(int sock_sniffer, struct filter *filters,  int filters_len)
+handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
 {
     static char buffer[BUFFER_SIZE];
     struct sockaddr_ll snifaddr;
@@ -391,7 +390,7 @@ handle_sniffer(int sock_sniffer, struct filter *filters,  int filters_len)
 static void
 poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
-    int filters_len = 0;
+    size_t filters_len = 0;
     struct filter *filters = (struct filter *)malloc(
         sizeof(struct filter) * MAX_FILTERS);
     if (!filters)

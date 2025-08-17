@@ -6,7 +6,7 @@
 #include <net/if.h>
 #include <netinet/if_ether.h>
 #include <netinet/in.h>
-#include <netinet/in.h>
+#include <netinet/ip6.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
@@ -128,7 +128,7 @@ udp_header(char const *buffer, size_t bufflen)
  * @sa tcp_header udp_header
  */
 void
-ip_header(char const *buffer, size_t buf_flen)
+print_ipv4(char const *buffer, size_t buf_flen)
 {
     struct ip ip_head;
     memcpy(&ip_head, buffer, sizeof(struct ip));
@@ -156,6 +156,68 @@ ip_header(char const *buffer, size_t buf_flen)
 }
 
 void
+print_ipv6(char const *buffer, size_t bufflen)
+{
+    struct ip6_hdr  ip6_head;
+    memcpy(&ip6_head, buffer, sizeof(struct ip6_hdr));
+
+    /* Make strings of src and dst ipv6 adresses*/
+    char ipv6_src_addr_string[INET6_ADDRSTRLEN];
+    if (inet_ntop(AF_INET6, &ip6_head.ip6_src, ipv6_src_addr_string, INET6_ADDRSTRLEN) == NULL) {
+        perror("inet_ntop");
+        return;
+    }
+    char ipv6_dst_addr_string[INET6_ADDRSTRLEN];
+    if (inet_ntop(AF_INET6, &ip6_head.ip6_dst, ipv6_dst_addr_string, INET6_ADDRSTRLEN) == NULL) {
+        perror("inet_ntop");
+        return;
+    }
+
+    printf("ip Version 6 Header\n");
+    printf("protocol          :    %u\n", ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt);
+    printf("Source ip         :    %s\n", ipv6_src_addr_string);
+    printf("Destination ip    :    %s\n", ipv6_dst_addr_string);
+
+    size_t offset = sizeof(struct ip6_hdr);
+    static const int IP6_HEADER_UNIT_SIZE = 8;
+
+
+    uint8_t next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    while (offset < bufflen) {
+        printf("ipv6 protocol: %u\n", next_header);
+        switch (next_header) {
+            case IPPROTO_HOPOPTS:    /* Hop-by-Hop options */
+            case IPPROTO_ROUTING:    /* Routing header */
+            case IPPROTO_FRAGMENT:   /* Fragmentation header */
+            case IPPROTO_ESP:        /* Encapsulating Security Payload */
+            case IPPROTO_AH:         /* Authentication Header */
+            case IPPROTO_DSTOPTS:    /* Destination Options */
+            {
+                if (offset + IP6_HEADER_UNIT_SIZE > bufflen)
+                    return;
+                struct ip6_ext ext;
+                memcpy(&ext, buffer + offset, sizeof(struct ip6_ext));
+                next_header = ext.ip6e_nxt;
+                offset += (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE;
+                break;
+            }
+            case IPPROTO_TCP:
+                if (offset + sizeof(struct tcphdr) <= bufflen) {
+                    tcp_header(buffer + offset, bufflen - offset);
+                }
+                return;
+            case IPPROTO_UDP:
+                if (offset + sizeof(struct udphdr) <= bufflen) {
+                    udp_header(buffer + offset, bufflen - offset);
+                }
+                return;
+            default:
+                return; /* unknown protocol */
+        }
+    }
+}
+
+void
 print_vlan(char const *buffer, size_t bufflen){
     uint16_t vlan_tci;
     memcpy(&vlan_tci, buffer, sizeof(uint16_t));
@@ -169,11 +231,11 @@ print_vlan(char const *buffer, size_t bufflen){
     switch(ntohs(ether_type))
     {
         case ETHERTYPE_IP:
-            ip_header(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t));
+            print_ipv4(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t));
             break;
 
         case ETHERTYPE_IPV6:
-            // ipv6_header(buffer, bufflen);
+            print_ipv6(buffer+sizeof(uint16_t), bufflen-sizeof(uint16_t));
             break;
 
         case ETHERTYPE_VLAN:
@@ -215,7 +277,11 @@ print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
     {
         case ETHERTYPE_IP:
             printf("Ether type        :    0x%04x\n", ntohs(ether_head.ether_type));
-            ip_header(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header));
+            print_ipv4(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header));
+            break;
+
+        case ETHERTYPE_IPV6:
+            print_ipv6(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header));
             break;
 
         case ETHERTYPE_VLAN:

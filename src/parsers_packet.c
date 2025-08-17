@@ -61,27 +61,12 @@ parse_packet_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data
     packet_data->dst_ipv6 = ip6_head.ip6_dst;
     packet_data->ip_protocol = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
 
-
-    char ipv6_src_addr_string[INET6_ADDRSTRLEN];
-    if (inet_ntop(AF_INET6, &packet_data->src_ipv6, ipv6_src_addr_string, INET6_ADDRSTRLEN) == NULL) {
-        perror("inet_ntop");
-        return;
-    }
-    printf("IPv6 src Address: %s\n", ipv6_src_addr_string);
-    char ipv6_dst_addr_string[INET6_ADDRSTRLEN];
-    if (inet_ntop(AF_INET6, &packet_data->dst_ipv6, ipv6_dst_addr_string, INET6_ADDRSTRLEN) == NULL) {
-        perror("inet_ntop");
-        return;
-    }
-    printf("IPv6 dst Address: %s\n", ipv6_dst_addr_string);
-
     size_t offset = sizeof(struct ip6_hdr);
     static const int IP6_HEADER_UNIT_SIZE = 8;
 
 
     uint8_t next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
     while (offset < bufflen) {
-        printf("ipv6 protocol: %u", next_header);
         switch (next_header) {
             case IPPROTO_HOPOPTS:    /* Hop-by-Hop options */
             case IPPROTO_ROUTING:    /* Routing header */

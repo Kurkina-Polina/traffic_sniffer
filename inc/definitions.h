@@ -20,7 +20,7 @@ enum {
 static volatile bool keep_running = 1;
 
 /* Count of all possible keys. */
-#define KEYS_COUNT 12
+#define KEYS_COUNT 14
 
 /* Temporary solution to create filters list. */
 #define MAX_FILTERS 10

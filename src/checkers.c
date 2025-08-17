@@ -107,6 +107,32 @@ check_dst_ipv4(struct filter packet_data, struct filter cur_filter)
     return false;
 }
 
+bool
+check_src_ipv6(struct filter packet_data, struct filter cur_filter)
+{
+    if (cur_filter.flags.src_ipv6_flag == 0)
+        return true;
+    if (memcmp(&packet_data.src_ipv6, &cur_filter.src_ipv6, sizeof(struct in6_addr)) == 0)
+    {
+        DPRINTF("ipv6 src is suitable\n");
+        return true;
+    }
+    return false;
+}
+
+bool
+check_dst_ipv6(struct filter packet_data, struct filter cur_filter)
+{
+    if (cur_filter.flags.dst_ipv6_flag == 0)
+        return true;
+    if (memcmp(&packet_data.dst_ipv6, &cur_filter.dst_ipv6, sizeof(struct in6_addr)) == 0)
+    {
+        DPRINTF("ipv6 dst is suitable\n");
+        return true;
+    }
+    return false;
+}
+
 /**
  * Check ip protocols are same or not.
  *

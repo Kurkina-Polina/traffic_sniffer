@@ -52,7 +52,10 @@ udp_header(char const *buffer, size_t bufflen);
  * @sa tcp_header udp_header
  */
 void
-ip_header(char const *buffer, size_t buf_flen);
+print_ipv4(char const *buffer, size_t buf_flen);
+
+void
+print_ipv6(char const *buffer, size_t buf_flen);
 
 void
 print_vlan(char const *buffer, size_t buf_flen);

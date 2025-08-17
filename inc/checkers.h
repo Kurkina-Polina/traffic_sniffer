@@ -22,6 +22,12 @@ bool
 check_dst_ipv4(struct filter packet_data, struct filter cur_filter);
 
 bool
+check_src_ipv6(struct filter packet_data, struct filter cur_filter);
+
+bool
+check_dst_ipv6(struct filter packet_data, struct filter cur_filter);
+
+bool
 check_ip_protocol(struct filter packet_data, struct filter cur_filter);
 
 bool

@@ -8,3 +8,4 @@ include_directories(inc)
 
 # Add an executable target
 add_executable(traffic_sniffer main.c src/checkers.c src/printers.c src/parsers src/parsers_packet)
+target_compile_options(traffic_sniffer PRIVATE "-g")

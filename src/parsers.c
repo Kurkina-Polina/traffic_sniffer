@@ -22,42 +22,6 @@ parse_mac(const char *str, struct ether_addr *mac)
 }
 
 bool
-parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((strcmp(name_key, "src_ipv4") == 0) && (new_filter->flags.src_ipv4_flag == 0))
-        {
-            int result = inet_pton(AF_INET, val_key, &(new_filter->src_ipv4));
-            if (result<=0) {
-                perror("error: Not in presentation format");
-                printf("%s|%s\n",
-                    val_key, inet_ntoa(new_filter->src_ipv4));
-                strcpy(message, "Error: filter src_ipv4: not in presentation format\n");
-                return false;
-            }
-            new_filter->flags.src_ipv4_flag = 1;
-        }
-    return true;
-}
-
-bool
-parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
-{
-    if ((strcmp(name_key, "dst_ipv4") == 0) && (new_filter->flags.dst_ipv4_flag == 0))
-        {
-            int result = inet_pton(AF_INET, val_key, &(new_filter->dst_ipv4));
-            if (result<=0) {
-                perror("error: Not in presentation format");
-                printf("%s|%s\n",
-                    val_key, inet_ntoa(new_filter->dst_ipv4));
-                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
-                return false;
-            }
-            new_filter->flags.dst_ipv4_flag = 1;
-        }
-    return true;
-}
-
-bool
 parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
     if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.dst_mac_flag == 0))
@@ -86,6 +50,76 @@ parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filt
             }
             new_filter->flags.src_mac_flag = 1;
         }
+    return true;
+}
+
+bool
+parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "src_ipv4") == 0) && (new_filter->flags.src_ipv4_flag == 0))
+        {
+            int result = inet_pton(AF_INET, val_key, &(new_filter->src_ipv4));
+            if (result<=0) {
+                printf("error: Not in presentation format");
+                printf("%s|%s\n",
+                    val_key, inet_ntoa(new_filter->src_ipv4));
+                strcpy(message, "Error: filter src_ipv4: not in presentation format\n");
+                return false;
+            }
+            new_filter->flags.src_ipv4_flag = 1;
+        }
+    return true;
+}
+
+bool
+parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "dst_ipv4") == 0) && (new_filter->flags.dst_ipv4_flag == 0))
+        {
+            int result = inet_pton(AF_INET, val_key, &(new_filter->dst_ipv4));
+            if (result<=0) {
+                printf("error: Not in presentation format");
+                printf("%s|%s\n",
+                    val_key, inet_ntoa(new_filter->dst_ipv4));
+                strcpy(message, "Error: filter dst_ipv4: not in presentation format\n");
+                return false;
+            }
+            new_filter->flags.dst_ipv4_flag = 1;
+        }
+    return true;
+}
+
+bool
+parse_src_ipv6(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "src_ipv6") == 0) && (new_filter->flags.src_ipv6_flag == 0))
+    {
+        int result = inet_pton(AF_INET6, val_key, &(new_filter->src_ipv6));
+        if (result<=0) {
+            printf("error: Not in presentation format");
+            printf("|%s|\n",val_key);
+            strcpy(message, "Error: filter src_ipv6: not in presentation format\n");
+            return false;
+        }
+        new_filter->flags.src_ipv6_flag = 1;
+    }
+    return true;
+}
+
+bool
+parse_dst_ipv6(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
+{
+    if ((strcmp(name_key, "dst_ipv6") == 0) && (new_filter->flags.dst_ipv6_flag == 0))
+    {
+        int result = inet_pton(AF_INET6, val_key, &(new_filter->dst_ipv6));
+        if (result<=0) {
+            printf("error: Not in presentation format");
+            printf("|%s|\n",val_key);
+            strcpy(message, "Error: filter dst_ipv6: not in presentation format\n");
+            return false;
+        }
+        new_filter->flags.dst_ipv6_flag = 1;
+    }
     return true;
 }
 
