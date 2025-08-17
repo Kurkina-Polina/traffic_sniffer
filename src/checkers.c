@@ -20,15 +20,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-/**
- * Compare mac addresses.
- *
- * @param buffer              full buffer, received from client
- * @param bufflen             size of buffer
- * @param mac                 mac address with which comparing
- *
- * @return                    true if addresses are same and false else
- */
+/* Compare sourse mac addresses. */
 bool
 check_src_mac(const struct filter packet_data, const struct filter cur_filter)
 {
@@ -43,6 +35,7 @@ check_src_mac(const struct filter packet_data, const struct filter cur_filter)
     return false;
 }
 
+/* Compare destination mac addresses. */
 bool
 check_dst_mac(const struct filter packet_data, const struct filter cur_filter)
 {
@@ -57,15 +50,7 @@ check_dst_mac(const struct filter packet_data, const struct filter cur_filter)
     return false;
 }
 
-/**
- * Check ether type are same or not.
- *
- * @param buffer              full buffer, received from client
- * @param bufflen             size of buffer
- * @param ether_type          ether type address with which comparing
- *
- * @return                    true if addresses are same and false else
- */
+
 bool
 check_ether_type(const struct filter packet_data, const struct filter cur_filter)
 {
@@ -81,15 +66,6 @@ check_ether_type(const struct filter packet_data, const struct filter cur_filter
     return false;
 }
 
-/**
- * Check ipv4 adderesses are same or not.
- *
- * @param buffer              full buffer, received from client
- * @param bufflen             size of buffer
- * @param ipv                 ipv4 address with which comparing
- *
- * @return                    true if addresses are same and false else
- */
 bool
 check_src_ipv4(const struct filter packet_data, const struct filter cur_filter)
 {
@@ -144,17 +120,6 @@ check_dst_ipv6(const struct filter packet_data, const struct filter cur_filter)
     return false;
 }
 
-/**
- * Check ip protocols are same or not.
- *
- * @param buffer              full buffer, received from client
- * @param bufflen             size of buffer
- * @param cur_filter          current filter with which comparing
- *
- * @todo                      add ipv6
- *
- * @return                    true if protocols are same and false else
- */
 bool
 check_ip_protocol(const struct filter packet_data, const struct filter cur_filter)
 {
@@ -169,18 +134,6 @@ check_ip_protocol(const struct filter packet_data, const struct filter cur_filte
     return false;
 }
 
-/**
- * Check tcp ports are same or not.
- *
- * @param buffer              full buffer, received from client
- * @param bufflen             size of buffer
- * @param tcp_port            tcp port with which comparing
- * @param is_src              flag to indicate sourse or destination port*
- *
- * @todo                      add ipv6
- *
- * @return                    true if ports are same and false else
- */
 bool
 check_dst_tcp(const struct filter packet_data, const struct filter cur_filter)
 {
@@ -208,16 +161,6 @@ check_src_tcp(const struct filter packet_data, const struct filter cur_filter)
 }
 
 
-/**
- * Check udp ports are same or not.
- *
- * @param udp_port            udp port with which comparing
- * @param is_src              flag to indicate sourse or destination port
- *
- * @todo                      add ipv6
- *
- * @return                    true if ports are same and false else
- */
 bool
 check_dst_udp(const struct filter packet_data, const struct filter cur_filter)
 {
