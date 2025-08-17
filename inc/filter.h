@@ -1,14 +1,9 @@
 #ifndef FILTER_H
 #define FILTER_H
-#include <arpa/inet.h>
-#include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <netinet/if_ether.h>
 #include <netinet/in.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
+
 /* Flags indicating which filter types are active. */
 struct filter_flag
 {

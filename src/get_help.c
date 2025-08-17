@@ -1,0 +1,31 @@
+char const*
+get_help_message()
+{
+    return "\n------------------------------------------------------\n"
+    "Usage: "
+    "add <key> <value>  <key> <value> - add filter\n"
+    "print - print statics on filters\n"
+    "exit - to close connection\n"
+    "del <number of filter> - delete filter by number\n"
+    "\n"
+    "possible keys:\n"
+    "\n"
+    "src_mac\n"
+    "dst_mac\n"
+    "ether_type\n "
+    "vlan_id\n"
+    "ip_protocol\n"
+    "dst_ipv4\n"
+    "src_ipv4\n"
+    "dst_ipv6 not supported yet\n"
+    "src_ipv6 not supported yet\n"
+    "src_tcp\n"
+    "dst_tcp\n"
+    "src_udp\n"
+    "dst_udp\n"
+    "\n"
+    "On one filter you can use only one same keys:\n"
+    " you can't use key dst_udp twice. Only last will work.\n"
+    "Maximum count of filters is 10\n"
+    "------------------------------------------------------\n";
+}

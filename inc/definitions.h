@@ -16,9 +16,6 @@ enum {
     CLIENT_INDEX = 2        /* for client communication */
 };
 
-/* Flag for end program. */
-static volatile bool keep_running = 1;
-
 /* Count of all possible keys. */
 #define KEYS_COUNT 14
 

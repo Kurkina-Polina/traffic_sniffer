@@ -2,6 +2,8 @@
 #define PRINTERS_H
 #include "filter.h"
 #include "definitions.h"
+#include <linux/if_packet.h>
+
 
 /**
  * Print MAC address.
@@ -70,4 +72,5 @@ print_vlan(char const *buffer, size_t buf_flen);
  */
 void
 print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr);
+
 #endif
