@@ -24,7 +24,12 @@ parse_mac(const char *str, struct ether_addr *mac)
 bool
 parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.dst_mac_flag == 0))
+    if ((strcmp(name_key, "dst_mac") == 0) && (new_filter->flags.dst_mac_flag != 0))
+    {
+        strcpy(message, "Error: dst mac is set already \n");
+        return false;
+    }
+    else if (strcmp(name_key, "dst_mac") == 0)
         {
             struct ether_addr *mac = &(new_filter->dst_mac);
             if (!parse_mac(val_key, mac))
@@ -40,7 +45,12 @@ parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "src_mac") == 0) && (new_filter->flags.src_mac_flag == 0))
+    if ((strcmp(name_key, "src_mac") == 0) && (new_filter->flags.src_mac_flag != 0))
+    {
+        strcpy(message, "Error: src mac is set already \n");
+        return false;
+    }
+    else if (strcmp(name_key, "src_mac") == 0)
         {
             struct ether_addr *mac = &(new_filter->src_mac);
             if (!parse_mac(val_key, mac))
@@ -56,7 +66,12 @@ parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "src_ipv4") == 0) && (new_filter->flags.src_ipv4_flag == 0))
+    if ((strcmp(name_key, "src_ipv4") == 0) && (new_filter->flags.src_ipv4_flag != 0))
+    {
+        strcpy(message, "Error: src ipv4 is set already \n");
+        return false;
+    }
+    else if (strcmp(name_key, "src_ipv4") == 0)
         {
             int result = inet_pton(AF_INET, val_key, &(new_filter->src_ipv4));
             if (result<=0) {
@@ -74,7 +89,12 @@ parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_fil
 bool
 parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "dst_ipv4") == 0) && (new_filter->flags.dst_ipv4_flag == 0))
+    if ((strcmp(name_key, "dst_ipv4") == 0) && (new_filter->flags.dst_ipv4_flag != 0))
+    {
+        strcpy(message, "Error: dst ipv4 is set already \n");
+        return false;
+    }
+    else if (strcmp(name_key, "dst_ipv4") == 0)
         {
             int result = inet_pton(AF_INET, val_key, &(new_filter->dst_ipv4));
             if (result<=0) {
@@ -92,7 +112,12 @@ parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_fil
 bool
 parse_src_ipv6(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "src_ipv6") == 0) && (new_filter->flags.src_ipv6_flag == 0))
+    if ((strcmp(name_key, "src_ipv6") == 0) && (new_filter->flags.src_ipv6_flag != 0))
+    {
+        strcpy(message, "Error: src ipv6 is set already \n");
+        return false;
+    }
+    else if (strcmp(name_key, "src_ipv6") == 0)
     {
         int result = inet_pton(AF_INET6, val_key, &(new_filter->src_ipv6));
         if (result<=0) {
@@ -109,7 +134,12 @@ parse_src_ipv6(const char *name_key, const char *val_key, struct filter *new_fil
 bool
 parse_dst_ipv6(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((strcmp(name_key, "dst_ipv6") == 0) && (new_filter->flags.dst_ipv6_flag == 0))
+    if ((strcmp(name_key, "dst_ipv6") == 0) && (new_filter->flags.dst_ipv6_flag != 0))
+    {
+        strcpy(message, "Error: dst ipv6 is set already \n");
+        return false;
+    }
+    else if (strcmp(name_key, "dst_ipv6") == 0)
     {
         int result = inet_pton(AF_INET6, val_key, &(new_filter->dst_ipv6));
         if (result<=0) {
@@ -126,12 +156,10 @@ parse_dst_ipv6(const char *name_key, const char *val_key, struct filter *new_fil
 bool
 parse_ip_protocol(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if ((new_filter->flags.ip_protocol_flag != 0))
+    if ((strcmp(name_key, "ip_protocol") == 0) && (new_filter->flags.ip_protocol_flag != 0))
     {
-        //FIXME: the message can be rewrating. use strncat and and new sz_message or snprintf
-        //FIXME: in other handles make 2: if- else if
         strcpy(message, "Error: ip protocol is set already \n");
-        return true;
+        return false;
     }
     else if (strcmp(name_key, "ip_protocol") == 0)
         {
@@ -144,12 +172,12 @@ parse_ip_protocol(const char *name_key, const char *val_key, struct filter *new_
 bool
 parse_ether_type(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.ether_type_flag != 0)
+    if ((strcmp(name_key, "ether_type") == 0) && (new_filter->flags.ether_type_flag != 0))
     {
-        strcpy(message, "Error: ether type is set already. will be ignored \n");
-        return true;
+        strcpy(message, "Error: ether type is set already \n");
+        return false;
     }
-    else if ((strcmp(name_key, "ether_type") == 0) && (new_filter->flags.ether_type_flag == 0))
+    else if (strcmp(name_key, "ether_type") == 0)
         {
             new_filter->ether_type = htons((uint16_t)strtoul(val_key, NULL, 0));
             new_filter->flags.ether_type_flag = 1;
@@ -160,9 +188,9 @@ parse_ether_type(const char *name_key, const char *val_key, struct filter *new_f
 bool
 parse_src_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.src_tcp_flag != 0){
-        strcpy(message, "Error: src tcp is set already. will be ignored \n");
-        return true;
+    if ((strcmp(name_key, "src_tcp") == 0) && (new_filter->flags.src_tcp_flag != 0)){
+        strcpy(message, "Error: src tcp is set already \n");
+        return false;
     }
     else if (strcmp(name_key, "src_tcp") == 0)
     {
@@ -175,9 +203,9 @@ parse_src_tcp(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_dst_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.dst_tcp_flag != 0){
-        strcpy(message, "Error: dst tcp is set already. will be ignored \n");
-        return true;
+    if ((strcmp(name_key, "dst_tcp") == 0) && (new_filter->flags.dst_tcp_flag != 0)){
+        strcpy(message, "Error: dst tcp is set already \n");
+        return false;
     }
     else if (strcmp(name_key, "dst_tcp") == 0)
     {
@@ -190,9 +218,9 @@ parse_dst_tcp(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_src_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.src_udp_flag != 0){
-        strcpy(message, "Error: src udp is set already. will be ignored \n");
-        return true;
+    if ((strcmp(name_key, "src_udp") == 0) && (new_filter->flags.src_udp_flag != 0)){
+        strcpy(message, "Error: src udp is set already \n");
+        return false;
     }
     else if (strcmp(name_key, "src_udp") == 0)
     {
@@ -205,9 +233,9 @@ parse_src_udp(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_dst_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.dst_udp_flag != 0){
-        strcpy(message, "Error: dst udp is set already. will be ignored \n");
-        return true;
+    if ((strcmp(name_key, "dst_udp") == 0) && (new_filter->flags.dst_udp_flag != 0)){
+        strcpy(message, "Error: dst udp is set already \n");
+        return false;
     }
     else if (strcmp(name_key, "dst_udp") == 0)
     {
@@ -220,9 +248,9 @@ parse_dst_udp(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.vlan_id_flag != 0){
-        strcpy(message, "Error: vlan flag is set already. will be ignored \n");
-        return true;
+    if ((strcmp(name_key, "vlan_id") == 0) && (new_filter->flags.vlan_id_flag != 0)){
+        strcpy(message, "Error: vlan flag is set already \n");
+        return false;
     }
     else if (strcmp(name_key, "vlan_id") == 0)
     {
@@ -235,9 +263,9 @@ parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filt
 bool
 parse_interface(const char *name_key, const char *val_key, struct filter *new_filter, char *message)
 {
-    if (new_filter->flags.interface_flag != 0){
-        strcpy(message, "Error: interface is set already. will be ignored \n");
-        return true;
+    if ((strcmp(name_key, "interface") == 0) && (new_filter->flags.interface_flag != 0)){
+        strcpy(message, "Error: interface is set already \n");
+        return false;
     }
     else if (strcmp(name_key, "interface") == 0)
     {

@@ -38,7 +38,7 @@
 static char const*
 get_help_message()
 {
-    return "\n--------------------------------------\n"
+    return "\n------------------------------------------------------\n"
     "Usage: "
     "add <key> <value>  <key> <value> - add filter\n"
     "print - print statics on filters\n"
@@ -61,10 +61,10 @@ get_help_message()
     "src_udp\n"
     "dst_udp\n"
     "\n"
-    "On one filter you can use only one same keys:"
+    "On one filter you can use only one same keys:\n"
     " you can't use key dst_udp twice. Only last will work.\n"
     "Maximum count of filters is 10\n"
-    "\n--------------------------------------\n";
+    "------------------------------------------------------\n";
 }
 
 /**
@@ -298,8 +298,13 @@ handle_client_event(int *const sock_client,
         }
         else
         {
-            //FIXME: use strcat instead
-            strcpy(message_send, get_help_message());
+            if (do_send(*sock_client, get_help_message(), strlen(get_help_message())) != 0)
+            {
+                if (close(*sock_client) == -1)
+                    perror("Error in close connection: ");
+                *sock_client = INVALID_SOCKET;
+                return;
+            }
         }
     }
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
