@@ -10,7 +10,9 @@
 
 
 /**
- * Send data to the file descriptor.
+ * Sends data to the file descriptor.
+ * Handles partial sends (when data is split across multiple packets).
+ * Guarantees full data transmission (retries until all bytes are sent).
  *
  * @param fd                   file descriptor that receive info
  * @param data                 data to send
