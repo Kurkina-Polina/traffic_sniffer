@@ -482,7 +482,7 @@ setup_sockets(struct pollfd *fds,
         &(int){1}, sizeof(int)) < 0)
     {
         perror("setsockopt(SO_REUSEADDR) failed");
-        //FIXME: make another commit why no return?
+        return errno;
     }
 
     if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
@@ -490,7 +490,7 @@ setup_sockets(struct pollfd *fds,
         perror("socket bind failed...\n");
         close(sock_sniffer);
         close(sock_listen);
-        return -1;
+        return errno;
     }
 
     if ((listen(sock_listen, 5)) != 0)
@@ -498,7 +498,7 @@ setup_sockets(struct pollfd *fds,
         perror("Listen failed...\n");
         close(sock_sniffer);
         close(sock_listen);
-        return -1;
+        return errno;
     }
 
     fds[SNIFFER_INDEX].fd = sock_sniffer;
