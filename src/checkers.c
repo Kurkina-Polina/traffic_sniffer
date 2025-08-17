@@ -34,9 +34,13 @@ check_src_mac(struct filter packet_data, struct filter cur_filter)
 {
     if (cur_filter.flags.src_mac_flag == 0)
         return true;
-    //FIXME: add DPRINTF or remove везде and make
-    // return packet_data.ether_type = cur_filter.ether_type
-    return !memcmp(packet_data.src_mac.ether_addr_octet, cur_filter.src_mac.ether_addr_octet, ETHER_ADDR_LEN);
+    if (memcmp(packet_data.src_mac.ether_addr_octet, 
+        cur_filter.src_mac.ether_addr_octet, ETHER_ADDR_LEN) == 0)
+    {
+        DPRINTF("src mac is suit\n");
+        return true;
+    }
+    return false;
 }
 
 bool
@@ -44,7 +48,13 @@ check_dst_mac(struct filter packet_data, struct filter cur_filter)
 {
     if (cur_filter.flags.dst_mac_flag == 0)
         return true;
-    return !memcmp(packet_data.dst_mac.ether_addr_octet, cur_filter.dst_mac.ether_addr_octet, ETHER_ADDR_LEN);
+    if (memcmp(packet_data.dst_mac.ether_addr_octet,
+        cur_filter.dst_mac.ether_addr_octet, ETHER_ADDR_LEN))
+    {
+        DPRINTF("dst mac is suit\n");
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -64,7 +74,8 @@ check_ether_type(struct filter packet_data, struct filter cur_filter)
 
     if(packet_data.ether_type == cur_filter.ether_type)
     {
-        DPRINTF("it is 0x%04x == 0x%04x\n", ntohs(packet_data.ether_type), ntohs(cur_filter.ether_type));
+        DPRINTF("ether type is suit: 0x%04x == 0x%04x\n",
+            ntohs(packet_data.ether_type), ntohs(cur_filter.ether_type));
         return true;
     }
     return false;
@@ -86,7 +97,7 @@ check_src_ipv4(struct filter packet_data, struct filter cur_filter)
         return true;
     if(packet_data.src_ipv4.s_addr == cur_filter.src_ipv4.s_addr)
     {
-        DPRINTF("ip src is suitable %s == %s\n", inet_ntoa(packet_data.src_ipv4),
+        DPRINTF("ip src is suit %s == %s\n", inet_ntoa(packet_data.src_ipv4),
             inet_ntoa(cur_filter.src_ipv4));
         return true;
     }
@@ -100,7 +111,7 @@ check_dst_ipv4(struct filter packet_data, struct filter cur_filter)
         return true;
     if(packet_data.dst_ipv4.s_addr == cur_filter.dst_ipv4.s_addr)
     {
-        DPRINTF("ip dst is suitable %s == %s\n", inet_ntoa(packet_data.dst_ipv4),
+        DPRINTF("ip dst is suit %s == %s\n", inet_ntoa(packet_data.dst_ipv4),
             inet_ntoa(cur_filter.dst_ipv4));
         return true;
     }
@@ -114,7 +125,7 @@ check_src_ipv6(struct filter packet_data, struct filter cur_filter)
         return true;
     if (memcmp(&packet_data.src_ipv6, &cur_filter.src_ipv6, sizeof(struct in6_addr)) == 0)
     {
-        DPRINTF("ipv6 src is suitable\n");
+        DPRINTF("ipv6 src is suit\n");
         return true;
     }
     return false;
@@ -151,7 +162,8 @@ check_ip_protocol(struct filter packet_data, struct filter cur_filter)
         return true;
     if(packet_data.ip_protocol == cur_filter.ip_protocol)
     {
-        DPRINTF("ip protocol is suitable %u == %u\n", packet_data.ip_protocol, cur_filter.ip_protocol);
+        DPRINTF("ip protocol is suitable %u == %u\n",
+            packet_data.ip_protocol, cur_filter.ip_protocol);
         return true;
     }
     return false;
@@ -176,7 +188,7 @@ check_dst_tcp(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.dst_tcp == cur_filter.dst_tcp)
     {
-        DPRINTF("tcp dst is suitable %u\n", ntohs(packet_data.dst_tcp));
+        DPRINTF("tcp dst is suit %u\n", ntohs(packet_data.dst_tcp));
         return true;
     }
     return false;
@@ -189,7 +201,7 @@ check_src_tcp(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.src_tcp == cur_filter.src_tcp)
     {
-        DPRINTF("tcp src is suitable %u\n", ntohs(packet_data.src_tcp));
+        DPRINTF("tcp src is suit %u\n", ntohs(packet_data.src_tcp));
         return true;
     }
     return false;
@@ -213,7 +225,7 @@ check_dst_udp(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.dst_udp == cur_filter.dst_udp)
     {
-        DPRINTF("udp dst is suitable %u\n", ntohs(packet_data.dst_udp));
+        DPRINTF("udp dst is suit %u\n", ntohs(packet_data.dst_udp));
         return true;
     }
     return false;
@@ -226,7 +238,7 @@ check_src_udp(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.src_udp == cur_filter.src_udp)
     {
-        DPRINTF("udp src is suitable %u\n", ntohs(packet_data.src_udp));
+        DPRINTF("udp src is suit %u\n", ntohs(packet_data.src_udp));
         return true;
     }
     return false;
@@ -239,7 +251,7 @@ check_vlan_id(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.vlan_id == cur_filter.vlan_id)
     {
-        DPRINTF("vlan id is suitable %u\n", packet_data.vlan_id);
+        DPRINTF("vlan id is suit %u\n", packet_data.vlan_id);
         return true;
     }
     return false;
@@ -252,7 +264,7 @@ check_interface(struct filter packet_data, struct filter cur_filter)
         return true;
     if (packet_data.interface == cur_filter.interface)
     {
-        DPRINTF("interface is suitable %u\n", packet_data.interface);
+        DPRINTF("interface is suit %u\n", packet_data.interface);
         return true;
     }
     return false;
