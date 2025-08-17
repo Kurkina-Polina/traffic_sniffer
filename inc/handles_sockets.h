@@ -22,6 +22,23 @@
 int
 do_send(int fd, char const *const data, size_t sz);
 
+
+/**
+ * Handler for interrupt by SIGINT.
+ */
+static void
+sig_handler(int unused);
+
+
+/**
+ * Compare the packet with all fields in the filter.
+ *
+ * @param packet_data          data of the packet
+ * @param cur_filter           current filter that cheking
+ *
+ * @return                     true if suit, false if not suit
+ *
+ */
 static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter);
 
 /**

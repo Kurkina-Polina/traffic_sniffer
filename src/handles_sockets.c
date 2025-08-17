@@ -32,9 +32,6 @@ do_send(int fd, char const *const data, size_t sz)
     return 0;
 }
 
-/**
- * Handler for interrupt by SIGINT.
- */
 static void
 sig_handler(int unused)
 {
