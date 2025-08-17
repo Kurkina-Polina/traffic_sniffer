@@ -27,7 +27,7 @@ print - Show filter statistics
 
 exit - Close connection
 
-del <filter_number> - Delete filter (not supported yet)
+del <filter_number> - Delete filter
 
 Supported Filter Keys
 
@@ -54,10 +54,4 @@ src_udp/dst_udp - UDP port
 ## Current Limitations
 
 Maximum of 10 active filters
-
-Only one value per key in filter (duplicates are ignored)
-
-Deletion (del) not yet implemented
-
-filters on IPv6, vlan_id, interface not supported
 
