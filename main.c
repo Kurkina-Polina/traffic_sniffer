@@ -72,9 +72,9 @@ command_line(int argc, char *argv[], struct in_addr *ip_server,
 int
 main(int argc, char *argv[])
 {
-    struct in_addr ip_server = {0};
-    uint16_t port_server = 0;
-    struct pollfd fds[3];
+    struct in_addr ip_server = {0}; /* ipv4 address to bind to */
+    uint16_t port_server = 0; /* port number to listen on connections */
+    struct pollfd fds[3]; /* frray of sniffer, listen, client sockets */
 
     command_line(argc, argv, &ip_server, &port_server);
 

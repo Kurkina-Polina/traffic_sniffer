@@ -41,44 +41,50 @@ sig_handler(int unused)
     keep_running = 0;
 }
 
+static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter)
+{
+    bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
+        check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
+        check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
+        check_interface, check_dst_ipv6, check_src_ipv6,
+    };
+
+    for (size_t j = 0; j < KEYS_COUNT; j++){
+        if (!array_checks[j](packet_data, cur_filter))
+            return false;
+    }
+    return true;
+}
+
 void
 data_process(char const *buffer, size_t bufflen,
     struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr)
 {
-    bool (*array_checks[])(struct filter packet_data, struct filter cur_filter) = {
-    check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
-    check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
-    check_interface, check_dst_ipv6, check_src_ipv6,
-    };
-
+    /* Unpacking packet to filter structure for simple comparing. */
     struct filter packet_data = {0};
-
     parse_packet_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     for (size_t i = 0; i < filters_len; i++)
     {
-        for (size_t j = 0; j < KEYS_COUNT; j++){
-            if (!array_checks[j](packet_data, filters[i]))
-                goto on_fail;
+        if (check_filter_match(packet_data, filters[i]))
+        {
+            filters[i].count_packets += 1;
+            filters[i].size += bufflen;
+            DPRINTF("SUITABLE  +1 packet on filter %zu: %ld\n\n",
+                i, filters[i].count_packets);
         }
-        filters[i].count_packets += 1;
-        filters[i].size += bufflen;
-        DPRINTF("\nSUITABLE    +1 packet on filter %zu: %ld\n",
-            i, filters[i].count_packets);
-        print_packet(buffer, bufflen, sniffaddr);
-        continue;
-on_fail:
-        DPRINTF("\nNOT SUITABLE  %ld\n", filters[i].count_packets);
-        print_packet(buffer, bufflen, sniffaddr);
+        else
+            DPRINTF("NOT SUITABLE on filter %ld\n\n", i);
     }
+    print_packet(buffer, bufflen, sniffaddr);
 }
 
 void
 handle_client_event(int *const sock_client,
     struct filter *filters,  size_t *filters_len)
 {
-    char rx_buffer[BUFFER_SIZE] = {};
-    static char message_send[BUFFER_SIZE];
+    char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
+    static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
 
     ssize_t const rc = read(*sock_client, rx_buffer, sizeof(rx_buffer));
     if (rc <= 0)
@@ -99,20 +105,14 @@ handle_client_event(int *const sock_client,
         struct filter new_filter = add_filter(rx_buffer,
             message_send, sizeof(message_send));
         struct filter empty_filter = {0};
+
+        /* If new filter correctly added and it is not empty. */
         if (memcmp(&new_filter, &empty_filter, sizeof(new_filter)) != 0) {
             filters[*filters_len] = new_filter;
             *filters_len +=1;
         }
         else
-        {
-            if (do_send(*sock_client, get_help_message(), strlen(get_help_message())) != 0)
-            {
-                if (close(*sock_client) == -1)
-                    perror("Error in close connection: ");
-                *sock_client = INVALID_SOCKET;
-                return;
-            }
-        }
+            do_send(*sock_client, get_help_message(), strlen(get_help_message()));
     }
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
         delete_filter(rx_buffer, filters, filters_len, message_send);
@@ -129,7 +129,7 @@ handle_client_event(int *const sock_client,
         *sock_client = INVALID_SOCKET;
         return;
     }
-    else
+    else /* unknown command */
         strcpy(message_send, get_help_message());
 
     if (do_send(*sock_client, message_send, strlen(message_send)) != 0)
@@ -145,7 +145,7 @@ handle_client_event(int *const sock_client,
 void
 handle_listen(int* sock_listen, int* sock_client)
 {
-
+    /* Make new connection with client. */
     socklen_t sock_client_len = sizeof(struct sockaddr_in);
     struct sockaddr_in clientaddr;
     int fd = accept(*sock_listen, (struct sockaddr*)&clientaddr, &sock_client_len);
@@ -155,6 +155,7 @@ handle_listen(int* sock_listen, int* sock_client)
         return;
     }
 
+    /* Reject if already connected. */
     if (*sock_client != -1)
     {
         char const already_busy_message[] = "Failed to accept"
@@ -172,10 +173,11 @@ handle_listen(int* sock_listen, int* sock_client)
 void
 handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
 {
-    static char buffer[BUFFER_SIZE];
-    struct sockaddr_ll snifaddr;
+    static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
+    struct sockaddr_ll snifaddr; /* it will contain a vlan */
     socklen_t snifaddr_len;
-    ssize_t const receive_count = recvfrom(sock_sniffer, buffer, sizeof(buffer), 0, (struct sockaddr*)&snifaddr, &snifaddr_len);
+    ssize_t const receive_count = recvfrom(sock_sniffer,
+        buffer, sizeof(buffer), 0, (struct sockaddr*)&snifaddr, &snifaddr_len);
 
     if (receive_count < 0)
     {
@@ -189,8 +191,8 @@ handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
 void
 poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
-    signal(SIGINT, sig_handler);
-    
+    signal(SIGINT, sig_handler); /* Set up SIGINT handler for correct end*/
+
     size_t filters_len = 0;
     struct filter *filters = (struct filter *)malloc(
         sizeof(struct filter) * MAX_FILTERS);
@@ -202,8 +204,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
 
     while (keep_running)
     {
-        static int const timeout_ms = 200;
-        int count_poll = poll(fds,  count_sockets, timeout_ms);
+        int count_poll = poll(fds,  count_sockets, TIMEOUT_MS);
         if (count_poll == -1)
         {
             perror("poll error");
@@ -247,6 +248,8 @@ setup_sockets(struct pollfd *fds,
 {
     int sock_sniffer;
     int sock_listen;
+
+    /* Server's listening socket address (IP+port for clients to connect). */
     struct sockaddr_in servaddr = {
         .sin_family = AF_INET,
         .sin_addr = { .s_addr = ip_server, },
@@ -291,7 +294,7 @@ setup_sockets(struct pollfd *fds,
     fds[SNIFFER_INDEX].events = POLL_IN;
     fds[LISTEN_INDEX].fd = sock_listen;
     fds[LISTEN_INDEX].events = POLL_IN;
-    fds[CLIENT_INDEX].fd = INVALID_SOCKET;
+    fds[CLIENT_INDEX].fd = INVALID_SOCKET; /* empty by defolt */
     fds[CLIENT_INDEX].events = POLL_IN;
 
     return 0;

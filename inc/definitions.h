@@ -9,6 +9,9 @@
 /* Indicator if socket is invalid. */
 #define INVALID_SOCKET (-1)
 
+/* Timeout in miliseconds for poll */
+#define TIMEOUT_MS 200
+
 /* Indexes of sockets for poll. */
 enum {
     SNIFFER_INDEX = 0,      /* socket capturing all packets and filtering them */
