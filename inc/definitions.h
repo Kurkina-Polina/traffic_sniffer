@@ -15,8 +15,11 @@
 /* Temporary solution to create filters list. */
 #define MAX_FILTERS 10
 
-/* Len of word in ip and tcp headers*/
+/* Len of word in ip and tcp headers. */
 #define IHL_WORD_LEN 4
+
+/* Mask for vlan_id from vlan_tci. */
+#define MASK_VLAN_ID 0x0FFF
 
 /* Indexes of sockets for poll. */
 enum {
