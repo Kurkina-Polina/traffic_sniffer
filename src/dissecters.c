@@ -11,6 +11,7 @@
 #include <netinet/udp.h>
 #include <stdio.h>
 
+/* Dissect tcp header and fill packet_data with dst_tcp and src_tcp. */
 void
 dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -22,6 +23,7 @@ dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
     packet_data->src_tcp = tcp_head.th_sport;
 }
 
+/* Dissect udp header and fill packet_data with dst_udp and src_udp. */
 void
 dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -33,6 +35,7 @@ dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
     packet_data->dst_udp = udp_head.uh_dport;
 }
 
+/* Dissect ipv4 header and fill packet_data with dst_ipv4, src_ipv4, ip_protocol. */
 void
 dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -64,6 +67,7 @@ dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
     }
 }
 
+/* Dissect ipv6 header and fill dst_ipv6, src_ipv6, ip_protocol. */
 void
 dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -114,8 +118,7 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 }
 
 
-
-//FIXME: squash switch with dissect_ether
+/* Dissect vlan header and fill packet_data with vlan_id. */
 void
 dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -153,6 +156,8 @@ dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
     }
 }
 
+/* Dissect ether header and fill packet_data with dst_mac, src_mac,
+ * interface, ether_type. */
 void
 dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
 {

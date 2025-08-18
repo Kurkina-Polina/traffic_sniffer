@@ -14,11 +14,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
-/**
- * Print MAC address.
- *
- * @param addr    MAC address in uint8_t
- */
+/* Print MAC address */
 void
 print_mac_addr(uint8_t const *addr)
 {
@@ -26,12 +22,7 @@ print_mac_addr(uint8_t const *addr)
         addr[0], addr[1], addr[2],addr[3],addr[4],addr[5]);
 }
 
-/**
- * Print data of a packet like hexdump.
- *
- * @param data    pointer of start data
- * @param size    size of data
- */
+/* Print data of a packet like hexdump. */
 void
 print_payload(char const *data, size_t size)
 {
@@ -69,15 +60,7 @@ print_payload(char const *data, size_t size)
     }
 }
 
-/**
- * Print tcp header of a packet.
- *
- * @param buffer    buffer that starts with tcp head
- * @param bufflen   size of buffer
- * @param iphdrlen  size of ip header in bytes
- *
- * @sa print_payload
- */
+/* Print tcp header of a packet. */
 void
 tcp_header(char const *buffer, size_t bufflen)
 {
@@ -94,15 +77,7 @@ tcp_header(char const *buffer, size_t bufflen)
     printf("\n\n ");
 }
 
-/**
- * Print udp header of a packet.
- *
- * @param buffer     buffer that starts with tcp head
- * @param bufflen   size of buffer
- * @param iphdrlen  size of ip header in bytes
- *
- * @sa print_payload
- */
+/* Print udp header of a packet. */
 void
 udp_header(char const *buffer, size_t bufflen)
 {
@@ -121,14 +96,7 @@ udp_header(char const *buffer, size_t bufflen)
 }
 
 
-/**
- * Print ip header of a packet.
- *
- * @param buffer    full buffer, received from client
- * @param buf_flen   size of buffer
- *
- * @sa tcp_header udp_header
- */
+/* Print ip header of a packet. */
 void
 print_ipv4(char const *buffer, size_t buf_flen)
 {
@@ -157,6 +125,7 @@ print_ipv4(char const *buffer, size_t buf_flen)
     }
 }
 
+/* Print ipv6 header of a packet. */
 void
 print_ipv6(char const *buffer, size_t bufflen)
 {
@@ -219,6 +188,7 @@ print_ipv6(char const *buffer, size_t bufflen)
     }
 }
 
+/* Print vlan header of a packet. */
 void
 print_vlan(char const *buffer, size_t bufflen){
     uint16_t vlan_tci;
@@ -251,14 +221,7 @@ print_vlan(char const *buffer, size_t bufflen){
     }
 }
 
-/**
- * Print all headers of packet and data.
- *
- * @param buffer    full buffer, received from client
- * @param bufflen   size of buffer
- *
- * @sa ip_header
- */
+/* Print interface and ethernet header of a packet.*/
 void
 print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
 {
