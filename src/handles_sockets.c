@@ -127,27 +127,18 @@ handle_client_event(int *const sock_client,
 
     DPRINTF("From client:\n%s\n", rx_buffer);
 
+    /* Process command from client. */
     if (strncmp(CMD_ADD, rx_buffer, sizeof(CMD_ADD) - 1) == 0)
-    {
-        struct filter new_filter = add_filter(rx_buffer,
+        add_filter(rx_buffer, filters, filters_len,
             message_send, sizeof(message_send));
-        static struct filter const empty_filter = {0};
 
-        /* If new filter correctly added and it is not empty. */
-        if (memcmp(&new_filter, &empty_filter, sizeof(new_filter)) != 0) {
-            filters[*filters_len] = new_filter;
-            *filters_len += 1;
-        }
-        else {
-            do_send(sock_client, get_help_message(), strlen(get_help_message()));
-        }
-    }
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
         delete_filter(rx_buffer, filters, filters_len, message_send);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
         get_statistics(filters, *filters_len, message_send,
             sizeof(message_send));
+
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
         strcpy(message_send, "exiting\n");
@@ -157,13 +148,14 @@ handle_client_event(int *const sock_client,
         *sock_client = INVALID_SOCKET;
         return;
     }
+
     else /* unknown command */
         strcpy(message_send, get_help_message());
 
     do_send(sock_client, message_send, strlen(message_send));
 }
 
-
+/* Establishes a connection with client. Reject if already connected. */
 void
 handle_listen(int* sock_listen, int* sock_client)
 {
@@ -192,6 +184,8 @@ handle_listen(int* sock_listen, int* sock_client)
     *sock_client = fd;
 }
 
+/* Receive a packet from socket and
+pass the packet to data_process for unpacking. */
 void
 handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
 {

@@ -26,17 +26,19 @@ get_statistics(struct filter const *filters,
  * what key is set. If key already is set, next key will be ignored.
  * If some key is invalid or other problems, function returns empty filter.
  *
- * @param buff                 string contain full ethernet packet
- * @param message[out]         message about the result of work
- * @param message_sz[in]       message size that have been set
+ * @param buff                    string contain full ethernet packet
+ * @param filters[out][in]        array of filters, that will be modified
+ * @param filters_len[out][in]    filters len, that will be modified
+ * @param message[out]            message about the result of work
+ * @param message_sz[in]          message size that have been set
  *
- * @todo                       add vlan_id, ipv6, interface
+ * @todo                          add vlan_id, ipv6, interface
  *
- * @return filter              new one filter
+ * @return                        true if success, false if fail
  *
  */
-struct filter
-add_filter(char *buff, char *message, size_t message_sz);
+bool
+add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *message, size_t message_sz);
 
 /**
  * Delete filter by a number. Number of filter is taken from buffer.
