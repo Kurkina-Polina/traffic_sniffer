@@ -1,3 +1,13 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief Socket management and packet filtering.
+ *
+ * Socket lifecycle: creation, polling, cleanup.
+ * Handles for polling.
+ * Applying filters to incoming packets.
+ */
+
 #ifndef HANDLES_SOCKETS_H
 #define HANDLES_SOCKETS_H
 
@@ -22,26 +32,8 @@
  *
  */
 int
-do_send(int fd, char const *const data, size_t sz);
+do_send(int *fd, char const *const data, size_t sz);
 
-
-/**
- * Handler for interrupt by SIGINT.
- */
-static void
-sig_handler(int unused);
-
-
-/**
- * Compare the packet with all fields in the filter.
- *
- * @param packet_data          data of the packet
- * @param cur_filter           current filter that cheking
- *
- * @return                     true if suit, false if not suit
- *
- */
-static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter);
 
 /**
  * Check if the packet is suit for any filters.
@@ -119,6 +111,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets);
 
 /**
  * Set up sockets, addresses and structure for poll.
+ * fds is array of 3 sockets: sniffing, listening and client.
  *
  * @param fds                  opened socket that receive info
  * @param port_server          port on which server works

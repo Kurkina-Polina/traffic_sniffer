@@ -1,3 +1,12 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief Socket operations and packet filtering.
+ *
+ * Socket lifecycle: creation, polling, cleanup.
+ * Handles for polling.
+ * Applying filters to incoming packets.
+ */
 #include "handles_sockets.h"
 #include "checkers.h"
 #include "handles_user_input.h"
@@ -15,16 +24,20 @@
 /* Flag for end program. */
 static volatile bool keep_running = 1;
 
+/* Sends data to the file descriptor even if it is split. */
 int
-do_send(int fd, char const *const data, size_t sz)
+do_send(int *fd, char const *const data, size_t sz)
 {
     size_t written_bytes = 0;
     for (; written_bytes != sz;) {
-        ssize_t rc = send(fd, data + written_bytes,
+        ssize_t rc = send(*fd, data + written_bytes,
             sz - written_bytes, MSG_DONTWAIT);
         if (rc <= 0)  {
             rc = rc ? errno : ENOTCONN;
             printf("Failed to send data: %s\n", strerror(rc));
+            if (close(*fd) == -1)
+                perror("Error in close connection: ");
+            *fd = INVALID_SOCKET;
             return rc;
         }
         written_bytes += rc;
@@ -32,12 +45,26 @@ do_send(int fd, char const *const data, size_t sz)
     return 0;
 }
 
+
+/**
+ * Handler for interrupt by SIGINT.
+ */
 static void
 sig_handler(int unused)
 {
     keep_running = 0;
 }
 
+
+/**
+ * Compare the packet with all fields in the filter.
+ *
+ * @param packet_data          data of the packet
+ * @param cur_filter           current filter that cheking
+ *
+ * @return                     true if suit, false if not suit
+ *
+ */
 static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter)
 {
     bool (*array_checks[])(const struct filter packet_data, const struct filter cur_filter) = {
@@ -46,13 +73,15 @@ static bool check_filter_match(const struct filter packet_data, const struct fil
         check_interface, check_dst_ipv6, check_src_ipv6,
     };
 
-    for (size_t j = 0; j < KEYS_COUNT; j++){
+    for (size_t j = 0; j < ARRAY_SIZE(array_checks); j++){
         if (!array_checks[j](packet_data, cur_filter))
             return false;
     }
     return true;
 }
 
+
+/* Parse packet and then compare for each filter.*/
 void
 data_process(char const *buffer, size_t bufflen,
     struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr)
@@ -61,6 +90,7 @@ data_process(char const *buffer, size_t bufflen,
     struct filter packet_data = {0};
     dissect_ether(buffer, bufflen, &packet_data, sniffaddr);
 
+    /* Compare with each filter. */
     for (size_t i = 0; i < filters_len; i++)
     {
         if (check_filter_match(packet_data, filters[i]))
@@ -76,6 +106,8 @@ data_process(char const *buffer, size_t bufflen,
     print_packet(buffer, bufflen, sniffaddr);
 }
 
+
+/* Receive a packet on sock_client and calls a function by any command. */
 void
 handle_client_event(int *const sock_client,
     struct filter *filters,  size_t *filters_len)
@@ -88,9 +120,7 @@ handle_client_event(int *const sock_client,
     {
         close(*sock_client);
         if (rc == 0)
-        {
             printf("Client closed the connection during read\n");
-        }
         *sock_client = INVALID_SOCKET;
         return;
     }
@@ -101,15 +131,16 @@ handle_client_event(int *const sock_client,
     {
         struct filter new_filter = add_filter(rx_buffer,
             message_send, sizeof(message_send));
-        struct filter empty_filter = {0};
+        static struct filter const empty_filter = {0};
 
         /* If new filter correctly added and it is not empty. */
         if (memcmp(&new_filter, &empty_filter, sizeof(new_filter)) != 0) {
             filters[*filters_len] = new_filter;
-            *filters_len +=1;
+            *filters_len += 1;
         }
-        else
-            do_send(*sock_client, get_help_message(), strlen(get_help_message()));
+        else {
+            do_send(sock_client, get_help_message(), strlen(get_help_message()));
+        }
     }
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
         delete_filter(rx_buffer, filters, filters_len, message_send);
@@ -120,7 +151,7 @@ handle_client_event(int *const sock_client,
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
         strcpy(message_send, "exiting\n");
-        do_send(*sock_client, message_send, strlen(message_send));
+        do_send(sock_client, message_send, strlen(message_send));
         if (close(*sock_client) == -1)
             perror("Error in close connection: ");
         *sock_client = INVALID_SOCKET;
@@ -129,13 +160,7 @@ handle_client_event(int *const sock_client,
     else /* unknown command */
         strcpy(message_send, get_help_message());
 
-    if (do_send(*sock_client, message_send, strlen(message_send)) != 0)
-    {
-        if (close(*sock_client) == -1)
-            perror("Error in close connection: ");
-        *sock_client = INVALID_SOCKET;
-        return;
-    }
+    do_send(sock_client, message_send, strlen(message_send));
 }
 
 
@@ -153,12 +178,12 @@ handle_listen(int* sock_listen, int* sock_client)
     }
 
     /* Reject if already connected. */
-    if (*sock_client != -1)
+    if (*sock_client != INVALID_SOCKET)
     {
         char const already_busy_message[] = "Failed to accept"
             " connection since there is already opened one\n";
         printf("%s", already_busy_message);
-        do_send(fd, already_busy_message, sizeof(already_busy_message));
+        do_send(&fd, already_busy_message, sizeof(already_busy_message));
         if (close(fd) == 0)
             perror("Error in close connection: ");
         return;
@@ -173,13 +198,14 @@ handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
     static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
     struct sockaddr_ll snifaddr; /* it will contain a vlan */
     socklen_t snifaddr_len;
+    //FIXME: close sock_sniffer and set it to INVALID_SOCKET
     ssize_t const receive_count = recvfrom(sock_sniffer,
         buffer, sizeof(buffer), 0, (struct sockaddr*)&snifaddr, &snifaddr_len);
 
     if (receive_count < 0)
     {
         perror("error in reading recvfrom function\n");
-        free(filters);
+        free(filters);// FIXME: WTF???????????
         return;
     }
     data_process(buffer, receive_count, filters, filters_len, snifaddr);
@@ -195,6 +221,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
         sizeof(struct filter) * MAX_FILTERS);
     if (!filters)
     {
+        //FIXME: close sockets in case of error or abort()
         perror("Error in malloc");
         return;
     }
@@ -206,6 +233,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
         {
             perror("poll error");
             free(filters);
+            //FIXME: close sockets in case of error or abort()
             return;
         }
 
@@ -239,6 +267,13 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
     free(filters);
 }
 
+/*
+ FIXME:
+struct my_fds {
+    struct pollfd fds[3];
+};
+
+*/
 int
 setup_sockets(struct pollfd *fds,
     uint16_t port_server, uint32_t ip_server)
@@ -268,6 +303,8 @@ setup_sockets(struct pollfd *fds,
         &(int){1}, sizeof(int)) < 0)
     {
         perror("setsockopt(SO_REUSEADDR) failed");
+        close(sock_sniffer);
+        close(sock_listen);
         return errno;
     }
 

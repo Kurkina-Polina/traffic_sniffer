@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
 /** @file
- * @brief Network traffic analyzer tool.
+ * @brief Network traffic analyzer tool. Main entry point.
  *
- * Chip-specific primitive implementation.
+ * Handles command-line arguments and initializes packet processing.
  */
 #include <arpa/inet.h>
 #include <errno.h>
