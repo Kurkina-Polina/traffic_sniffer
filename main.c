@@ -25,7 +25,7 @@
 /**
  * Print usage of program and end proramm.
  */
-__attribute__((noreturn)) void fail(char *argv)
+__attribute__((noreturn)) static void fail(char const *const argv)
 {
     fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv);
     exit(EXIT_FAILURE);
@@ -42,9 +42,9 @@ __attribute__((noreturn)) void fail(char *argv)
  */
 void
 command_line(int argc, char *argv[], struct in_addr *ip_server,
-    uint16_t *port_server)
+             uint16_t *port_server)
 {
-    for (int opt;(opt = getopt(argc, argv, "a:p:h:")) != -1;) {
+    for (int opt; (opt = getopt(argc, argv, "a:p:h:")) != -1;) {
         switch (opt)
         {
             case 'a':
@@ -71,7 +71,7 @@ command_line(int argc, char *argv[], struct in_addr *ip_server,
         fail(argv[0]);
     }
 
-    printf("starting on %s and on port %u\n",
+    printf("starting on %s:%u\n",
         inet_ntoa(*ip_server), ntohs(*port_server));
 }
 
@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 {
     struct in_addr ip_server = {0}; /* ipv4 address to bind to */
     uint16_t port_server = 0; /* port number to listen on connections */
-    struct pollfd fds[3]; /* frray of sniffer, listen, client sockets */
+    struct pollfd fds[3]; /* array of sniffer, listen, client sockets */
 
     command_line(argc, argv, &ip_server, &port_server);
 

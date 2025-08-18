@@ -28,7 +28,8 @@ parse_mac(const char *str, struct ether_addr *mac);
  *
  */
 extern bool
-parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_dst_mac(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -44,7 +45,8 @@ parse_dst_mac(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_src_mac(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -60,7 +62,8 @@ parse_src_mac(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_src_ipv4(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -76,7 +79,8 @@ parse_src_ipv4(const char *name_key, const char *val_key, struct filter *new_fil
  *
  */
 extern bool
-parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_dst_ipv4(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -92,7 +96,8 @@ parse_dst_ipv4(const char *name_key, const char *val_key, struct filter *new_fil
  *
  */
 extern bool
-parse_src_ipv6(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_src_ipv6(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 /**
  * Parse dst ipv6 from string val_key to field of struct new_filter.
@@ -107,7 +112,8 @@ parse_src_ipv6(const char *name_key, const char *val_key, struct filter *new_fil
  *
  */
 extern bool
-parse_dst_ipv6(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_dst_ipv6(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -123,7 +129,8 @@ parse_dst_ipv6(const char *name_key, const char *val_key, struct filter *new_fil
  *
  */
 extern bool
-parse_ip_protocol(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_ip_protocol(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -139,7 +146,8 @@ parse_ip_protocol(const char *name_key, const char *val_key, struct filter *new_
  *
  */
 extern bool
-parse_ether_type(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_ether_type(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -155,7 +163,8 @@ parse_ether_type(const char *name_key, const char *val_key, struct filter *new_f
  *
  */
 extern bool
-parse_src_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_src_tcp(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -171,7 +180,8 @@ parse_src_tcp(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_dst_tcp(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_dst_tcp(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -187,7 +197,8 @@ parse_dst_tcp(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_src_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_src_udp(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -203,7 +214,8 @@ parse_src_udp(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_dst_udp(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_dst_udp(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -219,7 +231,8 @@ parse_dst_udp(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_vlan_id(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 
 /**
@@ -235,6 +248,7 @@ parse_vlan_id(const char *name_key, const char *val_key, struct filter *new_filt
  *
  */
 extern bool
-parse_interface(const char *name_key, const char *val_key, struct filter *new_filter, char *message);
+parse_interface(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 #endif

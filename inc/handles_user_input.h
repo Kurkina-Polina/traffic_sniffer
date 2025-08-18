@@ -52,6 +52,7 @@ add_filter(char *buff, struct filter *filters,  size_t *filters_len,
  *
  */
 extern bool
-delete_filter(char const *buff, struct filter *filters,  size_t *filters_len, char* message_send);
+delete_filter(char const *buff, struct filter *filters,  size_t *filters_len,
+    char* message_send, size_t message_len);
 
 #endif

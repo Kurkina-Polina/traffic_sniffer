@@ -14,16 +14,16 @@ send_statistics(struct filter const *filters,
     size_t filters_len, int *sock_client)
 {
     static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
-    if(filters_len<=0)
+    if (filters_len <= 0)
     {
-        snprintf(message_send, BUFFER_SIZE, "No filters yet\n");
+        snprintf(message_send, sizeof(message_send), "No filters yet\n");
         do_send(sock_client, message_send, strlen(message_send));
         return;
     }
 
     for (size_t i = 0; i < filters_len; i++)
     {
-        snprintf(message_send, BUFFER_SIZE,
+        snprintf(message_send, sizeof(message_send),
                 "Filter number %zu: packets=%ld, total_size=%ld bytes\n",
                 i + 1,
                 filters[i].count_packets,
@@ -34,12 +34,19 @@ send_statistics(struct filter const *filters,
 
 /* Splits the string into tokens and every token compare with keys. */
 bool
-add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *message, size_t message_sz)
+add_filter(char *buff, struct filter *filters,
+    size_t *filters_len, char *message, size_t message_sz)
 {
-    static bool (* const array_parsers[])(const char *name_key, const char *val_key, struct filter *new_filter, char *message) = {
+    if (*filters_len >= MAX_FILTERS)
+    {
+        strncpy(message, "Error: limit of filters reached\n", message_sz);
+        return false;
+    }
+    static bool (* const array_parsers[])(const char *name_key, const char *val_key,
+        struct filter *new_filter, char *message, size_t message_len) = {
         parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
-        parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp, parse_vlan_id,
-        parse_interface, parse_dst_ipv6, parse_src_ipv6,
+        parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp,
+        parse_interface, parse_dst_ipv6, parse_src_ipv6, parse_vlan_id,
     };
     struct filter new_filter = {0}; /* structure for new filter */
     static struct filter const empty_filter = {0}; /* structure for check if new_filter is empty */
@@ -63,7 +70,7 @@ add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *messa
         DPRINTF("name_key |%s| val_key |%s| \n", name_key, val_key);
         for (size_t i = 0; i < ARRAY_SIZE(array_parsers); i++)
         {
-            if(!array_parsers[i](name_key, val_key, &new_filter, message))
+            if(!array_parsers[i](name_key, val_key, &new_filter, message, message_sz))
                 return false;
         }
         name_key = strtok(NULL, " ");
@@ -82,28 +89,28 @@ add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *messa
 /* Delete filter by a number. Number of filter is taken from buffer. */
 bool
 delete_filter(char const *buff, struct filter *filters,
-    size_t *filters_len, char* message_send)
+              size_t *filters_len, char* message_send, size_t message_len)
 {
     /* Find number of filter in buffer. */
     char const *num_filter = buff + sizeof(CMD_DEL) - 1;
     if (!num_filter)
     {
-        strncpy(message_send, "Error: No number of filter \n", sizeof(message_send));
+        strncpy(message_send, "Error: No number of filter \n", message_len);
         return false;
     }
 
     /* Convert it to int. */
-    int int_num_filter = atoi(num_filter)-1;
-    if (int_num_filter <= 0 || int_num_filter >= *filters_len)
+    int int_num_filter = atoi(num_filter) - 1;
+    if (int_num_filter < 0 || (size_t)int_num_filter >= *filters_len)
     {
         DPRINTF("len %ld number %d \n", *filters_len, int_num_filter);
-        strncpy(message_send, "Error: Invalid number of filter \n", sizeof(message_send));
+        strncpy(message_send, "Error: Invalid number of filter \n", message_len);
         return false;
     }
 
     /* Move all following at that place. */
     memmove(&filters[int_num_filter], &filters[int_num_filter+1], (*filters_len - int_num_filter-1)*sizeof(struct filter));
     *filters_len -= 1;
-    strncpy(message_send, "Successfuly delete \n", sizeof(message_send));
+    strncpy(message_send, "Successfully delete \n", message_len);
     return true;
 }

@@ -97,7 +97,7 @@ handle_listen(int* sock_listen, int* sock_client);
  * @return                     errno
  */
 extern int
-handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len);
+handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len);
 
 
 /**

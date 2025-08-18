@@ -52,6 +52,7 @@ do_send(int *fd, char const *const data, size_t sz)
 static void
 sig_handler(int unused)
 {
+    (void)unused;
     keep_running = 0;
 }
 
@@ -130,10 +131,10 @@ handle_client_event(int *const sock_client,
     /* Process command from client. */
     if (strncmp(CMD_ADD, rx_buffer, sizeof(CMD_ADD) - 1) == 0)
         add_filter(rx_buffer, filters, filters_len,
-            message_send, sizeof(message_send));
+            message_send, BUFFER_SIZE);
 
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
-        delete_filter(rx_buffer, filters, filters_len, message_send);
+        delete_filter(rx_buffer, filters, filters_len, message_send, BUFFER_SIZE);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
         send_statistics(filters, *filters_len, sock_client);
@@ -147,7 +148,6 @@ handle_client_event(int *const sock_client,
         *sock_client = INVALID_SOCKET;
         return;
     }
-
     else /* unknown command */
         strcpy(message_send, get_help_message());
 
@@ -187,18 +187,18 @@ handle_listen(int* sock_listen, int* sock_client)
 /* Receive a packet from socket and
 pass the packet to data_process for unpacking. */
 int
-handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
+handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
 {
     static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
-    struct sockaddr_ll snifaddr; /* it will contain a vlan */
-    socklen_t snifaddr_len;
-
-    ssize_t const receive_count = recvfrom(sock_sniffer,
+    struct sockaddr_ll snifaddr = {0}; /* it will contain a vlan */
+    socklen_t snifaddr_len = sizeof(snifaddr);
+    ssize_t const receive_count = recvfrom(*sock_sniffer,
         buffer, sizeof(buffer), 0, (struct sockaddr*)&snifaddr, &snifaddr_len);
 
     if (receive_count < 0)
     {
-        close(sock_sniffer);
+        close(*sock_sniffer);
+        *sock_sniffer = INVALID_SOCKET;
         perror("error in reading recvfrom function\n");
         return EBADF;
     }
@@ -224,14 +224,17 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
     {
         int count_poll = poll(fds,  count_sockets, TIMEOUT_MS);
         if (count_poll == -1)
+        {
+            perror("Error in poll :");
             break;
+        }
 
         if (count_poll == 0)
             continue;
 
         if (fds[SNIFFER_INDEX].revents & POLL_IN)
         {
-            if(handle_sniffer(fds[SNIFFER_INDEX].fd, filters, filters_len) != 0)
+            if(handle_sniffer(&fds[SNIFFER_INDEX].fd, filters, filters_len) != 0)
                 goto on_fail;
         }
 
@@ -241,7 +244,8 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
                 goto on_fail;
         }
 
-        if (fds[CLIENT_INDEX].revents & POLL_IN) {
+        if (fds[CLIENT_INDEX].revents & POLL_IN)
+        {
             handle_client_event(&fds[CLIENT_INDEX].fd, filters, &filters_len);
         }
 
@@ -318,7 +322,7 @@ setup_sockets(struct pollfd *fds,
     fds[SNIFFER_INDEX].events = POLL_IN;
     fds[LISTEN_INDEX].fd = sock_listen;
     fds[LISTEN_INDEX].events = POLL_IN;
-    fds[CLIENT_INDEX].fd = INVALID_SOCKET; /* empty by defolt */
+    fds[CLIENT_INDEX].fd = INVALID_SOCKET; /* empty by default */
     fds[CLIENT_INDEX].events = POLL_IN;
 
     return 0;
