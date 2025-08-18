@@ -156,7 +156,7 @@ handle_client_event(int *const sock_client,
 }
 
 /* Establishes a connection with client. Reject if already connected. */
-void
+int
 handle_listen(int* sock_listen, int* sock_client)
 {
     /* Make new connection with client. */
@@ -166,7 +166,7 @@ handle_listen(int* sock_listen, int* sock_client)
     if (fd == -1)
     {
         perror("Failed to accept connection");
-        return;
+        return EBADF;
     }
 
     /* Reject if already connected. */
@@ -178,31 +178,33 @@ handle_listen(int* sock_listen, int* sock_client)
         do_send(&fd, already_busy_message, sizeof(already_busy_message));
         if (close(fd) == 0)
             perror("Error in close connection: ");
-        return;
+        return 0;
     }
     printf("Connection accepted\n");
     *sock_client = fd;
+    return 0;
 }
 
 /* Receive a packet from socket and
 pass the packet to data_process for unpacking. */
-void
+int
 handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len)
 {
     static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
     struct sockaddr_ll snifaddr; /* it will contain a vlan */
     socklen_t snifaddr_len;
-    //FIXME: close sock_sniffer and set it to INVALID_SOCKET
+
     ssize_t const receive_count = recvfrom(sock_sniffer,
         buffer, sizeof(buffer), 0, (struct sockaddr*)&snifaddr, &snifaddr_len);
 
     if (receive_count < 0)
     {
+        close(sock_sniffer);
         perror("error in reading recvfrom function\n");
-        free(filters);// FIXME: WTF???????????
-        return;
+        return EBADF;
     }
     data_process(buffer, receive_count, filters, filters_len, snifaddr);
+    return 0;
 }
 
 void
@@ -215,35 +217,29 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
         sizeof(struct filter) * MAX_FILTERS);
     if (!filters)
     {
-        //FIXME: close sockets in case of error or abort()
         perror("Error in malloc");
-        return;
+        goto on_fail;
     }
 
     while (keep_running)
     {
         int count_poll = poll(fds,  count_sockets, TIMEOUT_MS);
         if (count_poll == -1)
-        {
-            perror("poll error");
-            free(filters);
-            //FIXME: close sockets in case of error or abort()
-            return;
-        }
+            break;
 
         if (count_poll == 0)
-        {
             continue;
-        }
 
         if (fds[SNIFFER_INDEX].revents & POLL_IN)
         {
-            handle_sniffer(fds[SNIFFER_INDEX].fd, filters, filters_len);
+            if(handle_sniffer(fds[SNIFFER_INDEX].fd, filters, filters_len) != 0)
+                goto on_fail;
         }
 
         if (fds[LISTEN_INDEX].revents & POLL_IN)
         {
-            handle_listen(&fds[LISTEN_INDEX].fd, &fds[CLIENT_INDEX].fd);
+            if (handle_listen(&fds[LISTEN_INDEX].fd, &fds[CLIENT_INDEX].fd) != 0)
+                goto on_fail;
         }
 
         if (fds[CLIENT_INDEX].revents & POLL_IN) {
@@ -258,6 +254,13 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
             fds[CLIENT_INDEX].fd = INVALID_SOCKET;
         }
     }
+on_fail:
+    if (fds[CLIENT_INDEX].fd != INVALID_SOCKET)
+        close(fds[CLIENT_INDEX].fd);
+    if (fds[SNIFFER_INDEX].fd != INVALID_SOCKET)
+        close(fds[SNIFFER_INDEX].fd);
+    if (fds[LISTEN_INDEX].fd != INVALID_SOCKET)
+        close(fds[LISTEN_INDEX].fd);
     free(filters);
 }
 

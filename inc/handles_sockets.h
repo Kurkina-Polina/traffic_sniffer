@@ -79,8 +79,9 @@ handle_client_event(int *const sock_client,
  * @param sock_listen          listening socket
  * @param sock_client          socket of client
  *
+ * @return                     errno
  */
-void
+int
 handle_listen(int* sock_listen, int* sock_client);
 
 
@@ -93,8 +94,9 @@ handle_listen(int* sock_listen, int* sock_client);
  * @param filters              array of filters
  * @param filters_len          count of filters
  *
+ * @return                     errno
  */
-void
+int
 handle_sniffer(int sock_sniffer, struct filter *filters,  size_t filters_len);
 
 
