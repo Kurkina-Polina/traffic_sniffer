@@ -19,7 +19,7 @@
  *
  * @param addr    MAC address in uint8_t
  */
-static void
+void
 print_mac_addr(uint8_t const *addr)
 {
     printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -32,7 +32,7 @@ print_mac_addr(uint8_t const *addr)
  * @param data    pointer of start data
  * @param size    size of data
  */
-static void
+void
 print_payload(char const *data, size_t size)
 {
     if (size <=0 )
@@ -78,7 +78,7 @@ print_payload(char const *data, size_t size)
  *
  * @sa print_payload
  */
-static void
+void
 tcp_header(char const *buffer, size_t bufflen)
 {
     struct tcphdr tcp_head;
