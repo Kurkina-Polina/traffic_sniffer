@@ -23,6 +23,15 @@
 
 
 /**
+ * Print usage of program and end proramm.
+ */
+void fail(char *argv)
+{
+    fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv);
+    exit(EXIT_FAILURE);
+}
+
+/**
  * Process arguments.
  *
  * @param argc
@@ -42,7 +51,7 @@ command_line(int argc, char *argv[], struct in_addr *ip_server,
                 if (inet_pton(AF_INET, optarg, ip_server) <= 0)
                 {
                     fprintf(stderr, "Invalid value for ip address\n");
-                    exit(EXIT_FAILURE);
+                    fail(argv[0]);
                 }
                 break;
 
@@ -56,12 +65,10 @@ command_line(int argc, char *argv[], struct in_addr *ip_server,
         }
     }
     if (ip_server->s_addr == 0) {
-        fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv[0]);
-        exit(EXIT_FAILURE);
+        fail(argv[0]);
     }
     if (port_server == 0) {
-        fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv[0]);
-        exit(EXIT_FAILURE);
+        fail(argv[0]);
     }
 
     printf("starting on %s and on port %u\n",
