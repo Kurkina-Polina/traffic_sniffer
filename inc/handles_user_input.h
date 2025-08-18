@@ -14,7 +14,7 @@
  * @param sock_client              socket client where we send message
  *
  */
-void
+extern void
 send_statistics(struct filter const *filters,
     size_t filters_len, int *sock_client);
 
@@ -36,8 +36,9 @@ send_statistics(struct filter const *filters,
  * @return                        true if success, false if fail
  *
  */
-bool
-add_filter(char *buff, struct filter *filters,  size_t *filters_len, int* sock_client);
+extern bool
+add_filter(char *buff, struct filter *filters,  size_t *filters_len,
+    char *message, size_t message_sz);
 
 /**
  * Delete filter by a number. Number of filter is taken from buffer.
@@ -50,7 +51,7 @@ add_filter(char *buff, struct filter *filters,  size_t *filters_len, int* sock_c
  * @return bool                   true if success and false if fail
  *
  */
-bool
+extern bool
 delete_filter(char const *buff, struct filter *filters,  size_t *filters_len, char* message_send);
 
 #endif

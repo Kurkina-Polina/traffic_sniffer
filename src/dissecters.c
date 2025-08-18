@@ -15,7 +15,10 @@ void
 dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct tcphdr tcp_head;
-    memcpy(&tcp_head, buffer, sizeof(struct tcphdr));
+    //FIXME: add this check
+    if (bufflen < sizeof(tcp_head))
+        return;
+    memcpy(&tcp_head, buffer, sizeof(tcp_head));
     packet_data->dst_tcp = tcp_head.th_dport;
     packet_data->src_tcp = tcp_head.th_sport;
 }
@@ -24,7 +27,7 @@ void
 dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct udphdr udp_head;
-    memcpy(&udp_head, buffer, sizeof(struct udphdr));
+    memcpy(&udp_head, buffer, sizeof(udp_head));
     packet_data->src_udp = udp_head.uh_sport;
     packet_data->dst_udp = udp_head.uh_dport;
 }
@@ -33,11 +36,12 @@ void
 dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip ip_head;
-    memcpy(&ip_head, buffer, sizeof(struct ip));
+    memcpy(&ip_head, buffer, sizeof(ip_head));
     packet_data->src_ipv4 = ip_head.ip_src;
     packet_data->dst_ipv4 = ip_head.ip_dst;
     packet_data->ip_protocol = ip_head.ip_p;
 
+    // FIXME: do the same with ptr and size as done in ether
     switch(ip_head.ip_p)
     {
         case IPPROTO_TCP:
@@ -78,9 +82,10 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data){
                 if (offset + IP6_HEADER_UNIT_SIZE > bufflen)
                     return;
                 struct ip6_ext ext;
+                //FIXME : copy past buffer + offset
                 memcpy(&ext, buffer + offset, sizeof(struct ip6_ext));
                 next_header = ext.ip6e_nxt;
-                offset += (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE;
+                offset += (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE; // FIXME: what is +1?
                 break;
             }
             case IPPROTO_TCP:
@@ -101,31 +106,37 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data){
 
 
 
+//FIXME: squash switch with dissect_ether
 void
 dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
+    //FIXME:
+    char const* ptr = buffer;
     uint16_t vlan_tci;
-    memcpy(&vlan_tci, buffer, sizeof(uint16_t));
+    memcpy(&vlan_tci, ptr, sizeof(uint16_t));
+    ptr += sizeof(vlan_tci);
 
-    uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
+    uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF; //FIXME: add MASK define
     if (packet_data->vlan_id == 0)
         packet_data->vlan_id = vlan_id;
 
     uint16_t ether_type;
-    memcpy(&ether_type, buffer+sizeof(uint16_t), sizeof(uint16_t));
+    memcpy(&ether_type, ptr, sizeof(ether_type));
+    ptr += sizeof(ether_type);
     packet_data->ether_type = ether_type;
+    size_t const l2_len = bufflen - (sizeof(ether_type) + sizeof(vlan_tci)); // FIXME:
     switch(ntohs(ether_type))
     {
         case ETHERTYPE_IP:
-            dissect_ipv4(buffer+sizeof(vlan_id)+sizeof(ether_type), bufflen-sizeof(uint16_t), packet_data);
+            dissect_ipv4(ptr, l2_len, packet_data);
             break;
 
         case ETHERTYPE_IPV6:
-            dissect_ipv6(buffer+sizeof(vlan_id)+sizeof(ether_type), bufflen-sizeof(uint16_t), packet_data);
+            dissect_ipv6(ptr, l2_len, packet_data);
             break;
 
         case ETHERTYPE_VLAN:
-            dissect_vlan(buffer+sizeof(vlan_id)+sizeof(ether_type), bufflen-sizeof(uint16_t), packet_data);
+            dissect_vlan(ptr, l2_len, packet_data);
             break;
 
         default:
@@ -144,18 +155,20 @@ dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, st
     memcpy(&(packet_data->src_mac), &(ether_head.ether_shost), sizeof(struct ether_addr));
     packet_data->ether_type = ether_head.ether_type;
 
-    switch(ntohs(ether_head.ether_type))
+    char const* l3_header_ptr = buffer + sizeof(ether_head);
+    size_t const l3_header_len = bufflen - sizeof(ether_head);
+    switch (ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
-            dissect_ipv4(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header), packet_data);
+            dissect_ipv4(l3_header_ptr, l3_header_len, packet_data);
             break;
 
         case ETHERTYPE_IPV6:
-            dissect_ipv6(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header), packet_data);
+            dissect_ipv6(l3_header_ptr, l3_header_len, packet_data);
             break;
 
         case ETHERTYPE_VLAN:
-            dissect_vlan(buffer+sizeof(struct ether_header), bufflen-sizeof(struct ether_header), packet_data);
+            dissect_vlan(l3_header_ptr, l3_header_len, packet_data);
             break;
 
         default:

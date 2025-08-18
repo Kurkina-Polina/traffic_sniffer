@@ -10,7 +10,7 @@
  *
  * @param addr    MAC address in uint8_t
  */
-static void
+extern  void
 print_mac_addr(uint8_t const *addr);
 
 /**
@@ -19,58 +19,74 @@ print_mac_addr(uint8_t const *addr);
  * @param data    pointer of start data
  * @param size    size of data
  */
-static void
+extern  void
 print_payload(char const *data, size_t size);
 /**
  * Print tcp header of a packet.
  *
- * @param buffer    full buffer, received from client
+ * @param buffer    pointer of start payload
  * @param bufflen   size of buffer
  * @param iphdrlen  size of ip header in bytes
  *
  * @sa print_payload
  */
-static void
+extern  void
 tcp_header(char const *buffer, size_t bufflen);
 
 /**
  * Print udp header of a packet.
  *
- * @param buffer    full buffer, received from client
+ * @param buffer    pointer of start header
  * @param bufflen   size of buffer
  * @param iphdrlen  size of ip header in bytes
  *
  * @sa print_payload
  */
-void
+extern void
 udp_header(char const *buffer, size_t bufflen);
 
 /**
- * Print ip header of a packet.
+ * Print ipv4 header of a packet.
  *
- * @param buffer    full buffer, received from client
- * @param buf_flen   size of buffer
+ * @param buffer    pointer of start header
+ * @param buf_flen  size of buffer
  *
  * @sa tcp_header udp_header
  */
-void
+extern void
 print_ipv4(char const *buffer, size_t buf_flen);
 
-void
+/**
+ * Print ipv6 header of a packet.
+ *
+ * @param buffer    pointer of start header
+ * @param buf_flen  size of buffer
+ *
+ * @sa tcp_header udp_header
+ */
+extern void
 print_ipv6(char const *buffer, size_t buf_flen);
 
-void
+/**
+ * Print vlan header of a packet.
+ *
+ * @param buffer    pointer of start header
+ * @param buf_flen  size of buffer
+ *
+ * @sa print_ipv6 print_ipv4
+ */
+extern void
 print_vlan(char const *buffer, size_t buf_flen);
 
 /**
  * Print all headers of packet and data.
  *
- * @param buffer    full buffer, received from client
+ * @param buffer    pointer of start header
  * @param bufflen   size of buffer
  *
  * @sa ip_header
  */
-void
+extern void
 print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr);
 
 #endif

@@ -3,7 +3,7 @@
 /**
  *  Returns message that contains API info that client may use
  */
-char const*
+extern char const*
 get_help_message();
 
 #endif
