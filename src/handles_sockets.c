@@ -136,7 +136,7 @@ handle_client_event(int *const sock_client,
         delete_filter(rx_buffer, filters, filters_len, message_send);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
-        get_statistics(filters, *filters_len, sock_client);
+        send_statistics(filters, *filters_len, sock_client);
 
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
