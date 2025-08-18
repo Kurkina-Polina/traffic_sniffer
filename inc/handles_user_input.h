@@ -7,17 +7,16 @@
 
 
 /**
- * Make message about all statistics
+ * Send message about all statistics.
  *
  * @param filters                  all setted filters
  * @param filters_len              count of setted filters
- * @param message[out]             statistics by every filter
- * @param message_sz [in]          size of message of statistics
+ * @param sock_client              socket client where we send message
  *
  */
 void
-get_statistics(struct filter const *filters,
-    size_t filters_len, char *message, size_t message_sz);
+send_statistics(struct filter const *filters,
+    size_t filters_len, int *sock_client);
 
 
 /**
@@ -38,7 +37,7 @@ get_statistics(struct filter const *filters,
  *
  */
 bool
-add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *message, size_t message_sz);
+add_filter(char *buff, struct filter *filters,  size_t *filters_len, int* sock_client);
 
 /**
  * Delete filter by a number. Number of filter is taken from buffer.

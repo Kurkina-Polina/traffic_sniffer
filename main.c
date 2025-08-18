@@ -25,7 +25,7 @@
 /**
  * Print usage of program and end proramm.
  */
-void fail(char *argv)
+__attribute__((noreturn)) void fail(char *argv)
 {
     fprintf(stderr, "Usage: %s -a <IP> -p <PORT>\n", argv);
     exit(EXIT_FAILURE);

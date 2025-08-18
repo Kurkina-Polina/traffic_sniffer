@@ -136,8 +136,7 @@ handle_client_event(int *const sock_client,
         delete_filter(rx_buffer, filters, filters_len, message_send);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
-        get_statistics(filters, *filters_len, message_send,
-            sizeof(message_send));
+        get_statistics(filters, *filters_len, sock_client);
 
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
@@ -264,13 +263,7 @@ on_fail:
     free(filters);
 }
 
-/*
- FIXME:
-struct my_fds {
-    struct pollfd fds[3];
-};
 
-*/
 int
 setup_sockets(struct pollfd *fds,
     uint16_t port_server, uint32_t ip_server)

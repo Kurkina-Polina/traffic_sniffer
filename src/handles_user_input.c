@@ -8,27 +8,31 @@
 #include "parsers.h"
 #include "handles_sockets.h"
 
+/* Send message about all statistics. */
 void
-get_statistics(struct filter const *filters,
-    size_t filters_len, char *message, size_t message_sz)
+send_statistics(struct filter const *filters,
+    size_t filters_len, int *sock_client)
 {
+    static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
     if(filters_len<=0)
     {
-        snprintf(message, message_sz, "No filters yet\n");
+        snprintf(message_send, BUFFER_SIZE, "No filters yet\n");
+        do_send(sock_client, message_send, strlen(message_send));
         return;
     }
-    int message_len = 0;
+
     for (size_t i = 0; i < filters_len; i++)
     {
-        //FIXME: what do we do if buffer is overfilled?
-        message_len += snprintf(message+message_len, message_sz,
+        snprintf(message_send, BUFFER_SIZE,
                 "Filter number %zu: packets=%ld, total_size=%ld bytes\n",
                 i + 1,
                 filters[i].count_packets,
                 filters[i].size);
+        do_send(sock_client, message_send, strlen(message_send));
     }
 }
 
+/* Splits the string into tokens and every token compare with keys. */
 bool
 add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *message, size_t message_sz)
 {
@@ -75,25 +79,31 @@ add_filter(char *buff, struct filter *filters,  size_t *filters_len, char *messa
     return false;
 }
 
+/* Delete filter by a number. Number of filter is taken from buffer. */
 bool
-delete_filter(char const *buff, struct filter *filters,  size_t *filters_len, char* message_send)
+delete_filter(char const *buff, struct filter *filters,
+    size_t *filters_len, char* message_send)
 {
+    /* Find number of filter in buffer. */
     char const *num_filter = buff + sizeof(CMD_DEL) - 1;
     if (!num_filter)
     {
-        strcpy(message_send, "Error: No number of filter \n");
+        strncpy(message_send, "Error: No number of filter \n", sizeof(message_send));
         return false;
     }
-    //FIXME: add error checks
+
+    /* Convert it to int. */
     int int_num_filter = atoi(num_filter)-1;
-    if (int_num_filter < 0 || int_num_filter >= *filters_len)
+    if (int_num_filter <= 0 || int_num_filter >= *filters_len)
     {
         DPRINTF("len %ld number %d \n", *filters_len, int_num_filter);
-        strcpy(message_send, "Error: Invalid number of filter \n");
+        strncpy(message_send, "Error: Invalid number of filter \n", sizeof(message_send));
         return false;
     }
+
+    /* Move all following at that place. */
     memmove(&filters[int_num_filter], &filters[int_num_filter+1], (*filters_len - int_num_filter-1)*sizeof(struct filter));
     *filters_len -= 1;
-    strcpy(message_send, "Successfuly delete \n");
+    strncpy(message_send, "Successfuly delete \n", sizeof(message_send));
     return true;
 }
