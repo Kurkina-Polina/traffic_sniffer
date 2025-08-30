@@ -35,7 +35,7 @@ extern bool parse_mac(const char *str, struct ether_addr *mac);
  * @param new_filter[out]      struct includes dst mac
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_dst_mac(const char *name_key, const char *val_key,
@@ -51,7 +51,7 @@ extern bool parse_dst_mac(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes src mac
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_src_mac(const char *name_key, const char *val_key,
@@ -67,7 +67,7 @@ extern bool parse_src_mac(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes src ipv4
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_src_ipv4(const char *name_key, const char *val_key,
@@ -83,7 +83,7 @@ extern bool parse_src_ipv4(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes dst ipv4
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_dst_ipv4(const char *name_key, const char *val_key,
@@ -99,7 +99,7 @@ extern bool parse_dst_ipv4(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes src ipv6
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_src_ipv6(const char *name_key, const char *val_key,
@@ -114,7 +114,7 @@ extern bool parse_src_ipv6(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes dst ipv6
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_dst_ipv6(const char *name_key, const char *val_key,
@@ -130,7 +130,7 @@ extern bool parse_dst_ipv6(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes ip protocol
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_ip_protocol(const char *name_key, const char *val_key,
@@ -146,7 +146,7 @@ extern bool parse_ip_protocol(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes ether type
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_ether_type(const char *name_key, const char *val_key,
@@ -162,7 +162,7 @@ extern bool parse_ether_type(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes src tcp
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_src_tcp(const char *name_key, const char *val_key,
@@ -178,7 +178,7 @@ extern bool parse_src_tcp(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes dst tcp
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_dst_tcp(const char *name_key, const char *val_key,
@@ -194,7 +194,7 @@ extern bool parse_dst_tcp(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes src udp
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_src_udp(const char *name_key, const char *val_key,
@@ -210,7 +210,7 @@ extern bool parse_src_udp(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes dst udp
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_dst_udp(const char *name_key, const char *val_key,
@@ -226,7 +226,7 @@ extern bool parse_dst_udp(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes vlan id
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_vlan_id(const char *name_key, const char *val_key,
@@ -242,7 +242,7 @@ extern bool parse_vlan_id(const char *name_key, const char *val_key,
  * @param new_filter[out]      struct includes interface
  * @param message[out]         message about error
  *
- * @return                     true if success, false if fail
+ * @return                     true if success, false otherwise
  *
  */
 extern bool parse_interface(const char *name_key, const char *val_key,
