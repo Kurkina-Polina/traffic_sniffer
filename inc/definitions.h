@@ -21,13 +21,6 @@
 /* Mask for vlan_id from vlan_tci. */
 #define MASK_VLAN_ID 0x0FFF
 
-/* Indexes of sockets for poll. */
-enum {
-    SNIFFER_INDEX = 0,      /* socket capturing all packets and filtering them */
-    LISTEN_INDEX = 1,       /* socket listening for incoming connections */
-    CLIENT_INDEX = 2        /* for client communication */
-};
-
 /* Control commands for intaction. */
 #define CMD_ADD "add"       /* add new filter */
 #define CMD_DEL "del"       /* delete filter */
@@ -39,5 +32,12 @@ enum {
 
 /* Helper macros to get count of elements in the array. */
 #define ARRAY_SIZE(a)  (sizeof(a) / sizeof((a)[0]))
+
+/* Indexes of sockets for poll. */
+enum {
+    SNIFFER_INDEX = 0,      /* socket capturing all packets and filtering them */
+    LISTEN_INDEX = 1,       /* socket listening for incoming connections */
+    CLIENT_INDEX = 2        /* for client communication */
+};
 
 #endif

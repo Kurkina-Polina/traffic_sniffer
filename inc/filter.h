@@ -5,8 +5,7 @@
 #include <netinet/in.h>
 
 /* Flags indicating which filter types are active. */
-struct filter_flag
-{
+struct filter_flag{
     int vlan_id_flag : 1;     /* flag indicates vlan id is set */
     int dst_mac_flag : 1;     /* flag indicates destination mac address is set */
     int src_mac_flag : 1;     /* flag indicates source mac address is set */
@@ -24,8 +23,7 @@ struct filter_flag
 };
 
 /* Filter contains or not keys. */
-struct filter
-{
+struct filter{
     struct in6_addr dst_ipv6; /* destination ip version 6*/
     struct in6_addr src_ipv6; /* sourse ip version 6*/
 
