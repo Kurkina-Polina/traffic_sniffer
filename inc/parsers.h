@@ -12,6 +12,10 @@
 #include "definitions.h"
 #include "filter.h"
 
+/*  Function type for parsing and setting filter parameters. */
+typedef bool(filter_param_setter)(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
+
 /**
  * Parse MAC address from string to struct of ether header.
  *

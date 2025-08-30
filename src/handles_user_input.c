@@ -50,8 +50,8 @@ add_filter(char *buff, struct filter *filters,
         strncpy(message, "Error: limit of filters reached\n", message_sz);
         return false;
     }
-    static bool (* const array_parsers[])(const char *name_key, const char *val_key,
-        struct filter *new_filter, char *message, size_t message_len) = {
+
+    static filter_param_setter* const array_parsers[] = {
         parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
         parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp,
         parse_interface, parse_dst_ipv6, parse_src_ipv6, parse_vlan_id,
