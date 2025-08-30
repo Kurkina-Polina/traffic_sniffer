@@ -21,8 +21,7 @@
  * @param packet_data          data of a packet
  *
  */
-extern void
-dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -33,8 +32,7 @@ dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data);
  * @param packet_data          data of a packet
  *
  */
-extern void
-dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -45,8 +43,7 @@ dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data);
  * @param packet_data          data of a packet
  *
  */
-extern void
-dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -57,8 +54,7 @@ dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data);
  * @param packet_data          data of a packet
  *
  */
-extern void
-dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -69,8 +65,7 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
  * @param packet_data          data of a packet
  *
  */
-extern void
-dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -82,6 +77,5 @@ dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
  * @param packet_data          data of a packet
  *
  */
-extern void
-dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr);
+extern void dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr);
 #endif

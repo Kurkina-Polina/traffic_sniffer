@@ -31,8 +31,7 @@
  * @return                     0 if success errno if faild
  *
  */
-extern int
-do_send(int *fd, char const *const data, size_t sz);
+extern int do_send(int *fd, char const *const data, size_t sz);
 
 
 /**
@@ -51,8 +50,7 @@ do_send(int *fd, char const *const data, size_t sz);
  *                            check_dst_tcp check_dst_udp check_vlan_id
  *                            check_interface check_src_ipv6 check_dst_ipv6
  */
-extern void
-data_process(char const *buffer, size_t bufflen,
+extern void data_process(char const *buffer, size_t bufflen,
     struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr);
 
 
@@ -66,8 +64,7 @@ data_process(char const *buffer, size_t bufflen,
  * @param filters_len [out]    count of filters set
  *
  */
-extern void
-handle_client_event(int *const sock_client,
+extern void handle_client_event(int *const sock_client,
     struct filter *filters,  size_t *filters_len);
 
 
@@ -81,8 +78,7 @@ handle_client_event(int *const sock_client,
  *
  * @return                     errno
  */
-extern int
-handle_listen(int* sock_listen, int* sock_client);
+extern int handle_listen(int* sock_listen, int* sock_client);
 
 
 /**
@@ -96,8 +92,7 @@ handle_listen(int* sock_listen, int* sock_client);
  *
  * @return                     errno
  */
-extern int
-handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len);
+extern int handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len);
 
 
 /**
@@ -107,8 +102,7 @@ handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len);
  * @param count_sockets        count of all sockets in poll
  *
  */
-extern void
-poll_loop(struct pollfd *fds, size_t const count_sockets);
+extern void poll_loop(struct pollfd *fds, size_t const count_sockets);
 
 
 /**
@@ -122,8 +116,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets);
  * @return                     0 if success and -1 if fail
  *
  */
-extern int
-setup_sockets(struct pollfd *fds,
+extern int setup_sockets(struct pollfd *fds,
     uint16_t port_server, uint32_t ip_server);
 
 #endif

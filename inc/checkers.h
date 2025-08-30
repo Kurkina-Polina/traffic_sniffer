@@ -26,8 +26,7 @@ typedef bool(filter_param_compare)(const struct filter *packet_data, const struc
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_src_mac(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_src_mac(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -38,8 +37,7 @@ check_src_mac(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_dst_mac(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_dst_mac(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -50,8 +48,7 @@ check_dst_mac(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_ether_type(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_ether_type(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -62,8 +59,7 @@ check_ether_type(const struct filter *packet_data, const struct filter *cur_filt
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_src_ipv4(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_src_ipv4(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -74,8 +70,7 @@ check_src_ipv4(const struct filter *packet_data, const struct filter *cur_filter
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_dst_ipv4(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_dst_ipv4(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -86,8 +81,7 @@ check_dst_ipv4(const struct filter *packet_data, const struct filter *cur_filter
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_src_ipv6(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_src_ipv6(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -98,8 +92,7 @@ check_src_ipv6(const struct filter *packet_data, const struct filter *cur_filter
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_dst_ipv6(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_dst_ipv6(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -110,8 +103,7 @@ check_dst_ipv6(const struct filter *packet_data, const struct filter *cur_filter
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_ip_protocol(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_ip_protocol(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -122,8 +114,7 @@ check_ip_protocol(const struct filter *packet_data, const struct filter *cur_fil
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_dst_tcp(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_dst_tcp(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -134,8 +125,7 @@ check_dst_tcp(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_src_tcp(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_src_tcp(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -146,8 +136,7 @@ check_src_tcp(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_dst_udp(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_dst_udp(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -158,8 +147,7 @@ check_dst_udp(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_src_udp(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_src_udp(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -170,8 +158,7 @@ check_src_udp(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_vlan_id(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_vlan_id(const struct filter *packet_data, const struct filter *cur_filter);
 
 
 /**
@@ -182,7 +169,6 @@ check_vlan_id(const struct filter *packet_data, const struct filter *cur_filter)
  *
  * @return                    true if addresses are same and false else
  */
-extern bool
-check_interface(const struct filter *packet_data, const struct filter *cur_filter);
+extern bool check_interface(const struct filter *packet_data, const struct filter *cur_filter);
 
 #endif
