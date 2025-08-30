@@ -1,3 +1,11 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief Key parsers for string-to-filter conversion.
+ *
+ * Extracts and validates filter parameters from input strings.
+ */
+
 #include "parsers.h"
 #include <arpa/inet.h>
 #include <stdbool.h>

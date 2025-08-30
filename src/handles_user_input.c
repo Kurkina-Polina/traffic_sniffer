@@ -1,3 +1,11 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief User command processing utilities.
+ *
+ * Functions called depending on user input commands.
+ */
+
 #include "handles_user_input.h"
 
 #include <stdlib.h>

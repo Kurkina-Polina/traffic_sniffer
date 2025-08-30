@@ -1,5 +1,13 @@
-#include "dissecters.h"
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief Dissecters headers.
+ *
+ * Input: pointer to start of header, size of all remaining headers and payload,
+ * pointer to the current packet data, that is filling.
+ */
 
+#include "dissecters.h"
 #include <string.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>

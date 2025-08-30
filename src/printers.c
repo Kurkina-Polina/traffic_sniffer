@@ -1,3 +1,11 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief Packet dissection and displaying.
+ *
+ * Implements layered packet parsing architecture for terminal output.
+ */
+
 #include "printers.h"
 #include <arpa/inet.h>
 #include <errno.h>

@@ -1,3 +1,12 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
+/** @file
+ * @brief Functions comparing keys.
+ *
+ * Input: value of key, current filter.
+ * Output: True or False.
+ */
+
 #include "checkers.h"
 #include <arpa/inet.h>
 #include <errno.h>
