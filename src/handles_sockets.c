@@ -68,7 +68,7 @@ sig_handler(int unused)
  */
 static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter)
 {
-    bool (*array_checks[])(const struct filter *packet_data, const struct filter *cur_filter) = {
+    static filter_param_compare* const array_checks[]= {
         check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
         check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
         check_interface, check_dst_ipv6, check_src_ipv6,
