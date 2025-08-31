@@ -124,8 +124,8 @@ ts_handle_client_event(int *const sock_client,
     struct filter **filter_list,  size_t *filters_len)
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
-    //FIXME: remove this message_send and just send data
-    static char message_send[BUFFER_SIZE]; /* will be sent to client as result */
+    /* Sending to client in case exit and inlnown key. */
+    static char message_send[BUFFER_SIZE];
     ssize_t const rc = read(*sock_client, rx_buffer, sizeof(rx_buffer));
 
     if (rc <= 0)
@@ -161,9 +161,10 @@ ts_handle_client_event(int *const sock_client,
         return;
     }
     else /* unknown command */
+    {
         strcpy(message_send, ts_get_help_message());
-
-    ts_do_send(sock_client, message_send, strlen(message_send));
+        ts_do_send(sock_client, message_send, strlen(message_send));
+    }
 }
 
 /* Establishes a connection with client. Reject if already connected. */
@@ -272,7 +273,7 @@ on_fail:
         close(fds[SNIFFER_INDEX].fd);
     if (fds[LISTEN_INDEX].fd != INVALID_SOCKET)
         close(fds[LISTEN_INDEX].fd);
-    //FIXME: как очиащть список? отдельную функцию делать которая рекурсивно очищать будет?
+    free_list(&filter_list);
 }
 
 

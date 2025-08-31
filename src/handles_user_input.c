@@ -17,7 +17,6 @@
 
 
 /* Send message about all statistics. */
-//FIXME: struct ts_node **filter_list cant be const??
 void
 ts_send_statistics(struct filter ** const filter_list,
     size_t filters_len, int *sock_client)

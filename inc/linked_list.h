@@ -15,10 +15,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/**
+ * Add new node to the end of list.
+ *
+ * @param head                     head of list
+ * @param new_filter               new filter
+ *
+ */
 extern void ts_add_end_node(struct filter **head, const struct filter *new_filter);
 
+/**
+ * Delete node by position of list.
+ *
+ * @param head                     head of list
+ * @param position                 position of deleting node
+ *
+ */
 extern void ts_delete_position_node(struct filter **head, size_t position);
 
-extern  struct filter* ts_get_data_next(struct filter* filter);
+/**
+ * Return the next node of list. Using in cycles.
+ *
+ * @param filter                   previous node of list
+ *
+ * @return                         next node of list
+ *
+ */
+extern struct filter* ts_get_data_next(struct filter* filter);
+
+/**
+ * Free memory occupied by linked list.
+ *
+ * @param filter                   previous node of list
+ *
+ * @return                         next node of list
+ *
+ */
+extern void free_list(struct filter **head);
 
 #endif
