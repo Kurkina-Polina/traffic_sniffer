@@ -12,6 +12,7 @@
 #define HANDLES_SOCKETS_H
 
 #include "filter.h"
+#include "linked_list.h"
 #include <stdbool.h>
 #include <poll.h>
 #include <sys/socket.h>
@@ -51,7 +52,7 @@ extern int ts_do_send(int *fd, char const *const data, size_t sz);
  *                            check_interface check_src_ipv6 check_dst_ipv6
  */
 extern void ts_data_process(char const *buffer, size_t bufflen,
-    struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr);
+    struct ts_node **filter_list, size_t filters_len, struct sockaddr_ll sniffaddr);
 
 
 /**
@@ -60,12 +61,12 @@ extern void ts_data_process(char const *buffer, size_t bufflen,
  * Send message to sock_client about the results.
  *
  * @param sock_client          opened socket that receive info
- * @param filters [out]        all set filters
+ * @param filter_list [out]    linken list of all set filters
  * @param filters_len [out]    count of filters set
  *
  */
 extern void ts_handle_client_event(int *const sock_client,
-    struct filter *filters,  size_t *filters_len);
+    struct ts_node **filter_list,  size_t *filters_len);
 
 
 /**
@@ -92,7 +93,8 @@ extern int ts_handle_listen(int* sock_listen, int* sock_client);
  *
  * @return                     errno
  */
-extern int ts_handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len);
+extern int ts_handle_sniffer(int *sock_sniffer,
+    struct ts_node **filter_list,  size_t filters_len);
 
 
 /**

@@ -12,9 +12,6 @@
 /* Timeout in miliseconds for poll */
 #define TIMEOUT_MS 200
 
-/* Temporary solution to create filters list. */
-#define MAX_FILTERS 10
-
 /* Len of word in ip and tcp headers. */
 #define IHL_WORD_LEN 4
 

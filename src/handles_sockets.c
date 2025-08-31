@@ -87,22 +87,24 @@ static bool check_filter_match(const struct filter packet_data, const struct fil
 /* Parse packet and then compare for each filter.*/
 void
 ts_data_process(char const *buffer, size_t bufflen,
-    struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr)
+    struct ts_node **filter_list, size_t filters_len, struct sockaddr_ll sniffaddr)
 {
     /* Unpacking packet to filter structure for simple comparing. */
     struct filter packet_data = {0};
+    struct ts_node *cur_filter_node; /* filter for cycle */
 
     ts_parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     /* Compare with each filter. */
     for (size_t i = 0; i < filters_len; i++)
     {
-        if (check_filter_match(packet_data, filters[i]))
+        cur_filter_node = ts_get_node_position(filter_list, i);
+        if (check_filter_match(packet_data, cur_filter_node->data))
         {
-            filters[i].count_packets += 1;
-            filters[i].size += bufflen;
+            cur_filter_node->data.count_packets += 1;
+            cur_filter_node->data.size += bufflen;
             DPRINTF("SUITABLE  +1 packet on filter %zu: %ld\n\n",
-                i, filters[i].count_packets);
+                i, cur_filter_node->data.count_packets);
         }
         else
             DPRINTF("NOT SUITABLE on filter %ld\n\n", i);
@@ -114,7 +116,7 @@ ts_data_process(char const *buffer, size_t bufflen,
 /* Receive a packet on sock_client and calls a function by any command. */
 void
 ts_handle_client_event(int *const sock_client,
-    struct filter *filters,  size_t *filters_len)
+    struct ts_node **filter_list,  size_t *filters_len)
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
     static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
@@ -130,17 +132,18 @@ ts_handle_client_event(int *const sock_client,
     }
 
     DPRINTF("From client:\n%s\n", rx_buffer);
+    memset(message_send, '\0', BUFFER_SIZE);
 
     /* Process command from client. */
     if (strncmp(CMD_ADD, rx_buffer, sizeof(CMD_ADD) - 1) == 0)
-        ts_add_filter(rx_buffer, filters, filters_len,
+        ts_add_filter(rx_buffer, filter_list, filters_len,
             message_send, BUFFER_SIZE);
 
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
-        ts_delete_filter(rx_buffer, filters, filters_len, message_send, BUFFER_SIZE);
+        ts_delete_filter(rx_buffer, filter_list, filters_len, message_send, BUFFER_SIZE);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
-        ts_send_statistics(filters, *filters_len, sock_client);
+        ts_send_statistics(filter_list, *filters_len, sock_client);
 
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
@@ -191,7 +194,7 @@ ts_handle_listen(int* sock_listen, int* sock_client)
 /* Receive a packet from socket and
 pass the packet to data_process for unpacking. */
 int
-ts_handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
+ts_handle_sniffer(int *sock_sniffer, struct ts_node **filter_list,  size_t filters_len)
 {
     static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
     struct sockaddr_ll snifaddr = {0}; /* it will contain a vlan */
@@ -206,7 +209,7 @@ ts_handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len
         perror("error in reading recvfrom function\n");
         return -EBADF;
     }
-    ts_data_process(buffer, receive_count, filters, filters_len, snifaddr);
+    ts_data_process(buffer, receive_count, filter_list, filters_len, snifaddr);
     return 0;
 }
 
@@ -214,17 +217,10 @@ void
 ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
     size_t filters_len = 0;
-    struct filter *filters = (struct filter *)malloc(
-        sizeof(struct filter) * MAX_FILTERS);
+    struct ts_node *filter_list = NULL; /* linked list of filters */
     int count_poll; /* number of ready file descriptors returned by poll() */
 
     signal(SIGINT, sig_handler); /* Set up SIGINT handler for correct end*/
-
-    if (!filters)
-    {
-        perror("Error in malloc");
-        goto on_fail;
-    }
 
     while (keep_running)
     {
@@ -240,7 +236,7 @@ ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 
         if (fds[SNIFFER_INDEX].revents & POLL_IN)
         {
-            if(ts_handle_sniffer(&fds[SNIFFER_INDEX].fd, filters, filters_len) != 0)
+            if(ts_handle_sniffer(&fds[SNIFFER_INDEX].fd, &filter_list, filters_len) != 0)
                 goto on_fail;
         }
 
@@ -252,7 +248,7 @@ ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 
         if (fds[CLIENT_INDEX].revents & POLL_IN)
         {
-            ts_handle_client_event(&fds[CLIENT_INDEX].fd, filters, &filters_len);
+            ts_handle_client_event(&fds[CLIENT_INDEX].fd, &filter_list, &filters_len);
         }
 
         if (fds[CLIENT_INDEX].revents & POLLHUP || fds[CLIENT_INDEX].revents & POLLERR)
@@ -270,7 +266,7 @@ on_fail:
         close(fds[SNIFFER_INDEX].fd);
     if (fds[LISTEN_INDEX].fd != INVALID_SOCKET)
         close(fds[LISTEN_INDEX].fd);
-    free(filters);
+    //FIXME: как очиащть список? отдельную функцию делать которая рекурсивно очищать будет?
 }
 
 

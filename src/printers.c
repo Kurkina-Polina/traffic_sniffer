@@ -80,11 +80,11 @@ ts_tcp_header(char const *buffer, size_t bufflen)
 
     memcpy(&tcp_head, buffer, sizeof(struct tcphdr));
     printf("tcp Header \n");
-    printf("Source tcp         :   %u\n", ntohs(tcp_head.th_sport));
-    printf("Destination tcp    :   %u\n", ntohs(tcp_head.th_dport));
+    printf("Source tcp        :   %u\n", ntohs(tcp_head.th_sport));
+    printf("Destination tcp   :   %u\n", ntohs(tcp_head.th_dport));
     tcp_data = buffer + tcp_head.th_off * IHL_WORD_LEN;
     message_len = bufflen - tcp_head.th_off * IHL_WORD_LEN;
-    printf("tcp payload        :   %ld bytes\n",  message_len);
+    printf("tcp payload       :   %ld bytes\n",  message_len);
     ts_print_payload(tcp_data, message_len);
     printf("\n###########################################################");
     printf("\n\n ");
@@ -101,11 +101,11 @@ ts_udp_header(char const *buffer, size_t bufflen)
 
     memcpy(&udp_head, buffer , sizeof(struct udphdr));
     printf("udp Header \n");
-    printf("Source udp         :   %u\n", ntohs(udp_head.uh_sport));
-    printf("Destination udp    :   %u\n", ntohs(udp_head.uh_dport));
+    printf("Source udp        :   %u\n", ntohs(udp_head.uh_sport));
+    printf("Destination udp   :   %u\n", ntohs(udp_head.uh_dport));
     udp_data = buffer + udp_header_len;
     message_len = bufflen - udp_header_len;
-    printf("udp payload        :   %ld bytes\n",  message_len);
+    printf("udp payload       :   %ld bytes\n",  message_len);
     ts_print_payload(udp_data, message_len);
     printf("\n###########################################################");
     printf("\n\n ");
@@ -266,7 +266,7 @@ ts_print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffadd
         return;
     }
 
-    printf("Interface: %s\n", ifname);
+    printf("Interface         : %s\n", ifname);
     printf("Ethernet Header \n");
 
     memcpy(&ether_head, buffer, sizeof(ether_head));

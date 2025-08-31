@@ -17,11 +17,15 @@
 
 
 /* Send message about all statistics. */
+//FIXME: struct ts_node **filter_list cant be const??
 void
-ts_send_statistics(struct filter const *filters,
+ts_send_statistics(struct ts_node **filter_list,
     size_t filters_len, int *sock_client)
 {
     static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
+    struct ts_node *cur_node = *filter_list; /* tmp node for cycle */
+
+    memset(message_send, '\0', BUFFER_SIZE);
 
     if (filters_len <= 0)
     {
@@ -30,20 +34,23 @@ ts_send_statistics(struct filter const *filters,
         return;
     }
 
-    for (size_t i = 0; i < filters_len; i++)
+    for (size_t i = 0; cur_node && i < filters_len; i++)
     {
+        // FIXME:
         snprintf(message_send, sizeof(message_send),
-                "Filter number %zu: packets=%ld, total_size=%ld bytes\n",
+                "Filter number %zu: packets = %ld, total_size = %ld bytes\n",
                 i + 1,
-                filters[i].count_packets,
-                filters[i].size);
-                ts_do_send(sock_client, message_send, strlen(message_send));
+                cur_node->data.count_packets,
+                cur_node->data.size);
+
+        ts_do_send(sock_client, message_send, strlen(message_send));
+        cur_node = cur_node->next;
     }
 }
 
 /* Splits the string into tokens and every token compare with keys. */
 bool
-ts_add_filter(char *buff, struct filter *filters,
+ts_add_filter(char *buff, struct ts_node **filter_list,
     size_t *filters_len, char *message, size_t message_sz)
 {
     static filter_param_setter* const array_parsers[] = {
@@ -56,11 +63,6 @@ ts_add_filter(char *buff, struct filter *filters,
     char *name_key; /* name of key */
     char *val_key; /* value of key */
 
-    if (*filters_len >= MAX_FILTERS)
-    {
-        strncpy(message, "Error: limit of filters reached\n", message_sz);
-        return false;
-    }
 
     buff[strcspn(buff, "\r\n")] = '\0';
     DPRINTF("buffer |%s|\n", buff);
@@ -90,7 +92,7 @@ ts_add_filter(char *buff, struct filter *filters,
     /* If new filter correctly added and it is not empty. */
     if (memcmp(&new_filter, &empty_filter, sizeof(new_filter)) != 0) {
         strncpy(message, "success\n", message_sz);
-        filters[*filters_len] = new_filter;
+        ts_add_end_node(filter_list, new_filter);
         *filters_len += 1;
         return true;
     }
@@ -100,7 +102,7 @@ ts_add_filter(char *buff, struct filter *filters,
 
 /* Delete filter by a number. Number of filter is taken from buffer. */
 bool
-ts_delete_filter(char const *buff, struct filter *filters,
+ts_delete_filter(char const *buff, struct ts_node **filter_list,
               size_t *filters_len, char* message_send, size_t message_len)
 {
     /* Find number of filter in buffer. */
@@ -123,7 +125,7 @@ ts_delete_filter(char const *buff, struct filter *filters,
     }
 
     /* Move all following at that place. */
-    memmove(&filters[int_num_filter], &filters[int_num_filter + 1], (*filters_len - int_num_filter - 1) * sizeof(struct filter));
+    ts_delete_position_node(filter_list, int_num_filter);
     *filters_len -= 1;
     strncpy(message_send, "Successfully delete \n", message_len);
     return true;
