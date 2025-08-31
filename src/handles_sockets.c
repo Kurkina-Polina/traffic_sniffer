@@ -26,7 +26,7 @@ static volatile bool keep_running = 1;
 
 /* Sends data to the file descriptor even if it is split. */
 int
-do_send(int *fd, char const *const data, size_t sz)
+ts_do_send(int *fd, char const *const data, size_t sz)
 {
     size_t written_bytes = 0;
     ssize_t rc; /* returned code by send */
@@ -71,9 +71,9 @@ sig_handler(int unused)
 static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter)
 {
     static filter_param_compare* const array_checks[]= {
-        check_dst_mac, check_src_mac, check_dst_ipv4, check_src_ipv4, check_ip_protocol,
-        check_ether_type, check_src_tcp, check_dst_tcp, check_src_udp, check_dst_udp, check_vlan_id,
-        check_interface, check_dst_ipv6, check_src_ipv6,
+        ts_check_dst_mac, ts_check_src_mac, ts_check_dst_ipv4, ts_check_src_ipv4, ts_check_ip_protocol,
+        ts_check_ether_type, ts_check_src_tcp, ts_check_dst_tcp, ts_check_src_udp, ts_check_dst_udp, ts_check_vlan_id,
+        ts_check_interface, ts_check_dst_ipv6, ts_check_src_ipv6,
     };
 
     for (size_t j = 0; j < ARRAY_SIZE(array_checks); j++){
@@ -86,12 +86,13 @@ static bool check_filter_match(const struct filter packet_data, const struct fil
 
 /* Parse packet and then compare for each filter.*/
 void
-data_process(char const *buffer, size_t bufflen,
+ts_data_process(char const *buffer, size_t bufflen,
     struct filter* filters, size_t filters_len, struct sockaddr_ll sniffaddr)
 {
     /* Unpacking packet to filter structure for simple comparing. */
     struct filter packet_data = {0};
-    parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
+
+    ts_parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     /* Compare with each filter. */
     for (size_t i = 0; i < filters_len; i++)
@@ -106,13 +107,13 @@ data_process(char const *buffer, size_t bufflen,
         else
             DPRINTF("NOT SUITABLE on filter %ld\n\n", i);
     }
-    print_packet(buffer, bufflen, sniffaddr);
+    ts_print_packet(buffer, bufflen, sniffaddr);
 }
 
 
 /* Receive a packet on sock_client and calls a function by any command. */
 void
-handle_client_event(int *const sock_client,
+ts_handle_client_event(int *const sock_client,
     struct filter *filters,  size_t *filters_len)
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
@@ -132,33 +133,33 @@ handle_client_event(int *const sock_client,
 
     /* Process command from client. */
     if (strncmp(CMD_ADD, rx_buffer, sizeof(CMD_ADD) - 1) == 0)
-        add_filter(rx_buffer, filters, filters_len,
+        ts_add_filter(rx_buffer, filters, filters_len,
             message_send, BUFFER_SIZE);
 
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
-        delete_filter(rx_buffer, filters, filters_len, message_send, BUFFER_SIZE);
+        ts_delete_filter(rx_buffer, filters, filters_len, message_send, BUFFER_SIZE);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
-        send_statistics(filters, *filters_len, sock_client);
+        ts_send_statistics(filters, *filters_len, sock_client);
 
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
         strcpy(message_send, "exiting\n");
-        do_send(sock_client, message_send, strlen(message_send));
+        ts_do_send(sock_client, message_send, strlen(message_send));
         if (close(*sock_client) == -1)
             perror("Error in close connection: ");
         *sock_client = INVALID_SOCKET;
         return;
     }
     else /* unknown command */
-        strcpy(message_send, get_help_message());
+        strcpy(message_send, ts_get_help_message());
 
-    do_send(sock_client, message_send, strlen(message_send));
+    ts_do_send(sock_client, message_send, strlen(message_send));
 }
 
 /* Establishes a connection with client. Reject if already connected. */
 int
-handle_listen(int* sock_listen, int* sock_client)
+ts_handle_listen(int* sock_listen, int* sock_client)
 {
     /* Make new connection with client. */
     socklen_t sock_client_len = sizeof(struct sockaddr_in);
@@ -177,7 +178,7 @@ handle_listen(int* sock_listen, int* sock_client)
     if (*sock_client != INVALID_SOCKET)
     {
         printf("%s", already_busy_message);
-        do_send(&fd, already_busy_message, sizeof(already_busy_message));
+        ts_do_send(&fd, already_busy_message, sizeof(already_busy_message));
         if (close(fd) == 0)
             perror("Error in close connection: ");
         return 0;
@@ -190,7 +191,7 @@ handle_listen(int* sock_listen, int* sock_client)
 /* Receive a packet from socket and
 pass the packet to data_process for unpacking. */
 int
-handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
+ts_handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
 {
     static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
     struct sockaddr_ll snifaddr = {0}; /* it will contain a vlan */
@@ -205,12 +206,12 @@ handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
         perror("error in reading recvfrom function\n");
         return -EBADF;
     }
-    data_process(buffer, receive_count, filters, filters_len, snifaddr);
+    ts_data_process(buffer, receive_count, filters, filters_len, snifaddr);
     return 0;
 }
 
 void
-poll_loop(struct pollfd *fds, size_t const count_sockets)
+ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
     size_t filters_len = 0;
     struct filter *filters = (struct filter *)malloc(
@@ -239,19 +240,19 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
 
         if (fds[SNIFFER_INDEX].revents & POLL_IN)
         {
-            if(handle_sniffer(&fds[SNIFFER_INDEX].fd, filters, filters_len) != 0)
+            if(ts_handle_sniffer(&fds[SNIFFER_INDEX].fd, filters, filters_len) != 0)
                 goto on_fail;
         }
 
         if (fds[LISTEN_INDEX].revents & POLL_IN)
         {
-            if (handle_listen(&fds[LISTEN_INDEX].fd, &fds[CLIENT_INDEX].fd) != 0)
+            if (ts_handle_listen(&fds[LISTEN_INDEX].fd, &fds[CLIENT_INDEX].fd) != 0)
                 goto on_fail;
         }
 
         if (fds[CLIENT_INDEX].revents & POLL_IN)
         {
-            handle_client_event(&fds[CLIENT_INDEX].fd, filters, &filters_len);
+            ts_handle_client_event(&fds[CLIENT_INDEX].fd, filters, &filters_len);
         }
 
         if (fds[CLIENT_INDEX].revents & POLLHUP || fds[CLIENT_INDEX].revents & POLLERR)
@@ -274,7 +275,7 @@ on_fail:
 
 
 int
-setup_sockets(struct pollfd *fds,
+ts_setup_sockets(struct pollfd *fds,
     uint16_t port_server, uint32_t ip_server)
 {
     int sock_sniffer;

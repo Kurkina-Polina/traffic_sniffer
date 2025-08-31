@@ -18,7 +18,7 @@
 
 /* Send message about all statistics. */
 void
-send_statistics(struct filter const *filters,
+ts_send_statistics(struct filter const *filters,
     size_t filters_len, int *sock_client)
 {
     static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
@@ -26,7 +26,7 @@ send_statistics(struct filter const *filters,
     if (filters_len <= 0)
     {
         snprintf(message_send, sizeof(message_send), "No filters yet\n");
-        do_send(sock_client, message_send, strlen(message_send));
+        ts_do_send(sock_client, message_send, strlen(message_send));
         return;
     }
 
@@ -37,19 +37,19 @@ send_statistics(struct filter const *filters,
                 i + 1,
                 filters[i].count_packets,
                 filters[i].size);
-        do_send(sock_client, message_send, strlen(message_send));
+                ts_do_send(sock_client, message_send, strlen(message_send));
     }
 }
 
 /* Splits the string into tokens and every token compare with keys. */
 bool
-add_filter(char *buff, struct filter *filters,
+ts_add_filter(char *buff, struct filter *filters,
     size_t *filters_len, char *message, size_t message_sz)
 {
     static filter_param_setter* const array_parsers[] = {
-        parse_str_dst_mac, parse_str_src_mac, parse_str_dst_ipv4, parse_str_src_ipv4, parse_str_ip_protocol,
-        parse_str_ether_type, parse_str_src_tcp, parse_str_dst_tcp, parse_str_src_udp, parse_str_dst_udp,
-        parse_str_interface, parse_str_dst_ipv6, parse_str_src_ipv6, parse_str_vlan_id,
+        ts_parse_str_dst_mac, ts_parse_str_src_mac, ts_parse_str_dst_ipv4, ts_parse_str_src_ipv4, ts_parse_str_ip_protocol,
+        ts_parse_str_ether_type, ts_parse_str_src_tcp, ts_parse_str_dst_tcp, ts_parse_str_src_udp, ts_parse_str_dst_udp,
+        ts_parse_str_interface, ts_parse_str_dst_ipv6, ts_parse_str_src_ipv6, ts_parse_str_vlan_id,
     };
     struct filter new_filter = {0}; /* structure for new filter */
     static struct filter const empty_filter = {0}; /* structure for check if new_filter is empty */
@@ -100,7 +100,7 @@ add_filter(char *buff, struct filter *filters,
 
 /* Delete filter by a number. Number of filter is taken from buffer. */
 bool
-delete_filter(char const *buff, struct filter *filters,
+ts_delete_filter(char const *buff, struct filter *filters,
               size_t *filters_len, char* message_send, size_t message_len)
 {
     /* Find number of filter in buffer. */

@@ -24,7 +24,7 @@
 
 /* Print MAC address */
 void
-print_mac_addr(uint8_t const *addr)
+ts_print_mac_addr(uint8_t const *addr)
 {
     printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
         addr[0], addr[1], addr[2],addr[3],addr[4],addr[5]);
@@ -32,7 +32,7 @@ print_mac_addr(uint8_t const *addr)
 
 /* Print data of a packet like hexdump. */
 void
-print_payload(char const *data, size_t size)
+ts_print_payload(char const *data, size_t size)
 {
     size_t line_start;
 
@@ -72,7 +72,7 @@ print_payload(char const *data, size_t size)
 
 /* Print tcp header of a packet. */
 void
-tcp_header(char const *buffer, size_t bufflen)
+ts_tcp_header(char const *buffer, size_t bufflen)
 {
     struct tcphdr tcp_head;
     char const *tcp_data;
@@ -85,14 +85,14 @@ tcp_header(char const *buffer, size_t bufflen)
     tcp_data = buffer + tcp_head.th_off * IHL_WORD_LEN;
     message_len = bufflen - tcp_head.th_off * IHL_WORD_LEN;
     printf("tcp payload        :   %ld bytes\n",  message_len);
-    print_payload(tcp_data, message_len);
+    ts_print_payload(tcp_data, message_len);
     printf("\n###########################################################");
     printf("\n\n ");
 }
 
 /* Print udp header of a packet. */
 void
-udp_header(char const *buffer, size_t bufflen)
+ts_udp_header(char const *buffer, size_t bufflen)
 {
     static size_t const udp_header_len = 8;
     struct udphdr udp_head;
@@ -106,7 +106,7 @@ udp_header(char const *buffer, size_t bufflen)
     udp_data = buffer + udp_header_len;
     message_len = bufflen - udp_header_len;
     printf("udp payload        :   %ld bytes\n",  message_len);
-    print_payload(udp_data, message_len);
+    ts_print_payload(udp_data, message_len);
     printf("\n###########################################################");
     printf("\n\n ");
 }
@@ -114,7 +114,7 @@ udp_header(char const *buffer, size_t bufflen)
 
 /* Print ip header of a packet. */
 void
-print_ipv4(char const *buffer, size_t bufflen)
+ts_print_ipv4(char const *buffer, size_t bufflen)
 {
     struct ip ip_head;
 
@@ -134,11 +134,11 @@ print_ipv4(char const *buffer, size_t bufflen)
     switch(ip_head.ip_p) {
 
         case IPPROTO_TCP:
-            tcp_header(buffer, bufflen );
+            ts_tcp_header(buffer, bufflen );
             break;
 
         case IPPROTO_UDP:
-            udp_header(buffer, bufflen);
+            ts_udp_header(buffer, bufflen);
             break;
 
         default:
@@ -148,7 +148,7 @@ print_ipv4(char const *buffer, size_t bufflen)
 
 /* Print ipv6 header of a packet. */
 void
-print_ipv6(char const *buffer, size_t bufflen)
+ts_print_ipv6(char const *buffer, size_t bufflen)
 {
     static const int IP6_HEADER_UNIT_SIZE = 8;
     struct ip6_hdr  ip6_head;
@@ -197,10 +197,10 @@ print_ipv6(char const *buffer, size_t bufflen)
                 break;
             }
             case IPPROTO_TCP:
-                tcp_header(buffer, bufflen);
+                ts_tcp_header(buffer, bufflen);
                 return;
             case IPPROTO_UDP:
-                udp_header(buffer, bufflen);
+                ts_udp_header(buffer, bufflen);
                 return;
             default:
                 return; /* unknown protocol */
@@ -210,7 +210,7 @@ print_ipv6(char const *buffer, size_t bufflen)
 
 /* Print vlan header of a packet. */
 void
-print_vlan(char const *buffer, size_t bufflen){
+ts_print_vlan(char const *buffer, size_t bufflen){
     uint16_t vlan_tci;
     uint16_t vlan_id;
     uint16_t ether_type;
@@ -234,15 +234,15 @@ print_vlan(char const *buffer, size_t bufflen){
     switch(ntohs(ether_type))
     {
         case ETHERTYPE_IP:
-            print_ipv4(buffer, bufflen);
+            ts_print_ipv4(buffer, bufflen);
             break;
 
         case ETHERTYPE_IPV6:
-            print_ipv6(buffer, bufflen);
+            ts_print_ipv6(buffer, bufflen);
             break;
 
         case ETHERTYPE_VLAN:
-            print_vlan(buffer, bufflen);
+            ts_print_vlan(buffer, bufflen);
             break;
 
         default:
@@ -254,7 +254,7 @@ print_vlan(char const *buffer, size_t bufflen){
 
 /* Print interface and ethernet header of a packet.*/
 void
-print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
+ts_print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
 {
     char ifname[IF_NAMESIZE];
     struct ether_header ether_head;
@@ -271,9 +271,9 @@ print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
 
     memcpy(&ether_head, buffer, sizeof(ether_head));
     printf("Destination MAC   :    ");
-    print_mac_addr(ether_head.ether_dhost);
+    ts_print_mac_addr(ether_head.ether_dhost);
     printf("Sourse      MAC   :    ");
-    print_mac_addr(ether_head.ether_shost);
+    ts_print_mac_addr(ether_head.ether_shost);
 
     /* Calculating the next header. */
     buffer += sizeof(ether_head);
@@ -283,16 +283,16 @@ print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
     {
         case ETHERTYPE_IP:
             printf("Ether type        :    0x%04x\n", ntohs(ether_head.ether_type));
-            print_ipv4(buffer, bufflen);
+            ts_print_ipv4(buffer, bufflen);
             break;
 
         case ETHERTYPE_IPV6:
-            print_ipv6(buffer, bufflen);
+            ts_print_ipv6(buffer, bufflen);
             break;
 
         case ETHERTYPE_VLAN:
             printf("TPID              :    0x%04x\n", ntohs(ether_head.ether_type));
-            print_vlan(buffer, bufflen);
+            ts_print_vlan(buffer, bufflen);
             break;
         default:
             break;

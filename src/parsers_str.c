@@ -16,7 +16,7 @@
 
 /* Parse MAC address from string to struct of ether header. */
 bool
-parse_str_mac(const char *str, struct ether_addr *mac)
+ts_parse_str_mac(const char *str, struct ether_addr *mac)
 {
     return sscanf(str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
                  &mac->ether_addr_octet[0], &mac->ether_addr_octet[1],
@@ -26,7 +26,7 @@ parse_str_mac(const char *str, struct ether_addr *mac)
 
 /* Parse dst mac from string val_key to field of struct new_filter. */
 bool
-parse_str_dst_mac(const char *name_key, const char *val_key,
+ts_parse_str_dst_mac(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     if (strcmp(name_key, "dst_mac") != 0)
@@ -36,7 +36,7 @@ parse_str_dst_mac(const char *name_key, const char *val_key,
         strncpy(message, "Error: dst mac is set already \n", message_len);
         return false;
     }
-    if (!parse_str_mac(val_key, &new_filter->dst_mac))
+    if (!ts_parse_str_mac(val_key, &new_filter->dst_mac))
     {
         strncpy(message, "Error: filter dst_mac \n", message_len);
         return false;
@@ -48,7 +48,7 @@ parse_str_dst_mac(const char *name_key, const char *val_key,
 
 /* Parse src mac from string val_key to field of struct new_filter. */
 bool
-parse_str_src_mac(const char *name_key, const char *val_key,
+ts_parse_str_src_mac(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     if (strcmp(name_key, "src_mac") != 0)
@@ -57,7 +57,7 @@ parse_str_src_mac(const char *name_key, const char *val_key,
         strncpy(message, "Error: src mac is set already \n", message_len);
         return false;
     }
-    if (!parse_str_mac(val_key, &new_filter->src_mac))
+    if (!ts_parse_str_mac(val_key, &new_filter->src_mac))
     {
         strncpy(message, "Error: filter src_mac \n", message_len);
         return false;
@@ -69,7 +69,7 @@ parse_str_src_mac(const char *name_key, const char *val_key,
 
 /* Parse src ipv4 from string val_key to field of struct new_filter. */
 bool
-parse_str_src_ipv4(const char *name_key, const char *val_key,
+ts_parse_str_src_ipv4(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     int rc; /* returned code by inet_pton() */
@@ -96,7 +96,7 @@ parse_str_src_ipv4(const char *name_key, const char *val_key,
 
 /* Parse dst ipv4 from string val_key to field of struct new_filter. */
 bool
-parse_str_dst_ipv4(const char *name_key, const char *val_key,
+ts_parse_str_dst_ipv4(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     int rc; /* returned code by inet_pton() */
@@ -123,7 +123,7 @@ parse_str_dst_ipv4(const char *name_key, const char *val_key,
 
 /* Parse src ipv6 from string val_key to field of struct new_filter. */
 bool
-parse_str_src_ipv6(const char *name_key, const char *val_key,
+ts_parse_str_src_ipv6(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     int rc; /* returned code by inet_pton() */
@@ -149,7 +149,7 @@ parse_str_src_ipv6(const char *name_key, const char *val_key,
 
 /* Parse dst ipv6 from string val_key to field of struct new_filter. */
 bool
-parse_str_dst_ipv6(const char *name_key, const char *val_key,
+ts_parse_str_dst_ipv6(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     int rc; /* returned code by inet_pton() */
@@ -175,7 +175,7 @@ parse_str_dst_ipv6(const char *name_key, const char *val_key,
 
 /* Parse ip protocol from string val_key to field of struct new_filter. */
 bool
-parse_str_ip_protocol(const char *name_key, const char *val_key,
+ts_parse_str_ip_protocol(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint8_t ip_protocol;
@@ -202,7 +202,7 @@ parse_str_ip_protocol(const char *name_key, const char *val_key,
 
 /* Parse ether type from string val_key to field of struct new_filter. */
 bool
-parse_str_ether_type(const char *name_key, const char *val_key,
+ts_parse_str_ether_type(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint16_t ether_type;
@@ -230,7 +230,7 @@ parse_str_ether_type(const char *name_key, const char *val_key,
 
 /* Parse src tcp from string val_key to field of struct new_filter. */
 bool
-parse_str_src_tcp(const char *name_key, const char *val_key,
+ts_parse_str_src_tcp(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint16_t src_tcp;
@@ -256,7 +256,7 @@ parse_str_src_tcp(const char *name_key, const char *val_key,
 
 /* Parse dst tcp from string val_key to field of struct new_filter. */
 bool
-parse_str_dst_tcp(const char *name_key, const char *val_key,
+ts_parse_str_dst_tcp(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint16_t dst_tcp;
@@ -282,7 +282,7 @@ parse_str_dst_tcp(const char *name_key, const char *val_key,
 
 /* Parse src udp from string val_key to field of struct new_filter. */
 bool
-parse_str_src_udp(const char *name_key, const char *val_key,
+ts_parse_str_src_udp(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint16_t src_udp;
@@ -308,7 +308,7 @@ parse_str_src_udp(const char *name_key, const char *val_key,
 
 /* Parsedst udp from string val_key to field of struct new_filter. */
 bool
-parse_str_dst_udp(const char *name_key, const char *val_key,
+ts_parse_str_dst_udp(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint16_t dst_udp;
@@ -334,7 +334,7 @@ parse_str_dst_udp(const char *name_key, const char *val_key,
 
 /* Parse vlan id from string val_key to field of struct new_filter. */
 bool
-parse_str_vlan_id(const char *name_key, const char *val_key,
+ts_parse_str_vlan_id(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     uint16_t vlan_id;
@@ -360,7 +360,7 @@ parse_str_vlan_id(const char *name_key, const char *val_key,
 
 /* Parse interface from string val_key to field of struct new_filter. */
 bool
-parse_str_interface(const char *name_key, const char *val_key,
+ts_parse_str_interface(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len)
 {
     int interface;

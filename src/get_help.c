@@ -7,7 +7,7 @@
  */
 
 char const*
-get_help_message()
+ts_get_help_message()
 {
     return "\n------------------------------------------------------\n"
     "Usage: "

@@ -31,7 +31,7 @@
 
 /* Compare sourse mac addresses. */
 bool
-check_src_mac(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_src_mac(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.src_mac_flag)
         return true;
@@ -46,7 +46,7 @@ check_src_mac(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare destination mac addresses. */
 bool
-check_dst_mac(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_dst_mac(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.dst_mac_flag)
         return true;
@@ -61,7 +61,7 @@ check_dst_mac(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare ether_types. */
 bool
-check_ether_type(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_ether_type(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.ether_type_flag)
         return true;
@@ -77,7 +77,7 @@ check_ether_type(const struct filter *packet_data, const struct filter *cur_filt
 
 /* Compare src_ipv4. */
 bool
-check_src_ipv4(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_src_ipv4(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.src_ipv4_flag)
         return true;
@@ -92,7 +92,7 @@ check_src_ipv4(const struct filter *packet_data, const struct filter *cur_filter
 
 /* Compare dst_ipv4. */
 bool
-check_dst_ipv4(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_dst_ipv4(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.dst_ipv4_flag)
         return true;
@@ -107,7 +107,7 @@ check_dst_ipv4(const struct filter *packet_data, const struct filter *cur_filter
 
 /* Compare src_ipv6. */
 bool
-check_src_ipv6(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_src_ipv6(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.src_ipv6_flag)
         return true;
@@ -121,7 +121,7 @@ check_src_ipv6(const struct filter *packet_data, const struct filter *cur_filter
 
 /* Compare dst_ipv6. */
 bool
-check_dst_ipv6(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_dst_ipv6(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.dst_ipv6_flag)
         return true;
@@ -135,7 +135,7 @@ check_dst_ipv6(const struct filter *packet_data, const struct filter *cur_filter
 
 /* Compare ip_protocol. */
 bool
-check_ip_protocol(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_ip_protocol(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.ip_protocol_flag)
         return true;
@@ -150,7 +150,7 @@ check_ip_protocol(const struct filter *packet_data, const struct filter *cur_fil
 
 /* Compare dst_tcp. */
 bool
-check_dst_tcp(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_dst_tcp(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.dst_tcp_flag)
         return true;
@@ -164,7 +164,7 @@ check_dst_tcp(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare src_tcp. */
 bool
-check_src_tcp(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_src_tcp(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.src_tcp_flag)
         return true;
@@ -178,7 +178,7 @@ check_src_tcp(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare dst_udp. */
 bool
-check_dst_udp(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_dst_udp(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.dst_udp_flag)
         return true;
@@ -192,7 +192,7 @@ check_dst_udp(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare src_udp. */
 bool
-check_src_udp(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_src_udp(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.src_udp_flag)
         return true;
@@ -206,7 +206,7 @@ check_src_udp(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare vlan_id. */
 bool
-check_vlan_id(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_vlan_id(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.vlan_id_flag)
         return true;
@@ -220,7 +220,7 @@ check_vlan_id(const struct filter *packet_data, const struct filter *cur_filter)
 
 /* Compare interfaces. */
 bool
-check_interface(const struct filter *packet_data, const struct filter *cur_filter)
+ts_check_interface(const struct filter *packet_data, const struct filter *cur_filter)
 {
     if (!cur_filter->flags.interface_flag)
         return true;

@@ -21,7 +21,7 @@
 
 /* Dissect tcp header and fill packet_data with dst_tcp and src_tcp. */
 void
-parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
+ts_parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct tcphdr tcp_head;
 
@@ -35,7 +35,7 @@ parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect udp header and fill packet_data with dst_udp and src_udp. */
 void
-parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
+ts_parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct udphdr udp_head;
 
@@ -49,7 +49,7 @@ parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect ipv4 header and fill packet_data with dst_ipv4, src_ipv4, ip_protocol. */
 void
-parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
+ts_parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip ip_head;
 
@@ -68,11 +68,11 @@ parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
     switch(ip_head.ip_p)
     {
         case IPPROTO_TCP:
-            parser_pkt_tcp(buffer, bufflen, packet_data);
+            ts_parser_pkt_tcp(buffer, bufflen, packet_data);
             break;
 
         case IPPROTO_UDP:
-            parser_pkt_udp(buffer, bufflen, packet_data);
+            ts_parser_pkt_udp(buffer, bufflen, packet_data);
             break;
 
         default:
@@ -82,7 +82,7 @@ parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect ipv6 header and fill dst_ipv6, src_ipv6, ip_protocol. */
 void
-parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
+ts_parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip6_hdr  ip6_head;
     static const int IP6_HEADER_UNIT_SIZE = 8;
@@ -120,10 +120,10 @@ parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
                 break;
             }
             case IPPROTO_TCP:
-                parser_pkt_tcp(buffer, bufflen, packet_data);
+                ts_parser_pkt_tcp(buffer, bufflen, packet_data);
                 return;
             case IPPROTO_UDP:
-                parser_pkt_udp(buffer, bufflen, packet_data);
+                ts_parser_pkt_udp(buffer, bufflen, packet_data);
                 return;
             default:
                 return; /* unknown protocol */
@@ -134,7 +134,7 @@ parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect vlan header and fill packet_data with vlan_id. */
 void
-parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
+ts_parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     uint16_t vlan_tci;
     uint16_t vlan_id;
@@ -156,15 +156,15 @@ parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
     switch(ntohs(ether_type))
     {
         case ETHERTYPE_IP:
-            parser_pkt_ipv4(buffer, bufflen, packet_data);
+            ts_parser_pkt_ipv4(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_IPV6:
-            parser_pkt_ipv6(buffer, bufflen, packet_data);
+            ts_parser_pkt_ipv6(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_VLAN:
-            parser_pkt_vlan(buffer, bufflen, packet_data);
+            ts_parser_pkt_vlan(buffer, bufflen, packet_data);
             break;
 
         default:
@@ -175,7 +175,7 @@ parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 /* Dissect ether header and fill packet_data with dst_mac, src_mac,
  * interface, ether_type. */
 void
-parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
+ts_parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
 {
     struct ether_header ether_head;
 
@@ -194,15 +194,15 @@ parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_data,
     switch (ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
-            parser_pkt_ipv4(buffer, bufflen, packet_data);
+            ts_parser_pkt_ipv4(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_IPV6:
-            parser_pkt_ipv6(buffer, bufflen, packet_data);
+            ts_parser_pkt_ipv6(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_VLAN:
-            parser_pkt_vlan(buffer, bufflen, packet_data);
+            ts_parser_pkt_vlan(buffer, bufflen, packet_data);
             break;
 
         default:

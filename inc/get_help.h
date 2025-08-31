@@ -11,6 +11,6 @@
 /**
  *  Returns message that contains API info that client may use
  */
-extern char const* get_help_message();
+extern char const* ts_get_help_message();
 
 #endif

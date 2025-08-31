@@ -18,7 +18,7 @@
  *
  * @param addr    MAC address in uint8_t
  */
-extern  void print_mac_addr(uint8_t const *addr);
+extern  void ts_print_mac_addr(uint8_t const *addr);
 
 /**
  * Print data of a packet like hexdump.
@@ -26,7 +26,7 @@ extern  void print_mac_addr(uint8_t const *addr);
  * @param data    pointer of start data
  * @param size    size of data
  */
-extern  void print_payload(char const *data, size_t size);
+extern  void ts_print_payload(char const *data, size_t size);
 /**
  * Print tcp header of a packet.
  *
@@ -36,7 +36,7 @@ extern  void print_payload(char const *data, size_t size);
  *
  * @sa print_payload
  */
-extern  void tcp_header(char const *buffer, size_t bufflen);
+extern  void ts_tcp_header(char const *buffer, size_t bufflen);
 
 /**
  * Print udp header of a packet.
@@ -47,7 +47,7 @@ extern  void tcp_header(char const *buffer, size_t bufflen);
  *
  * @sa print_payload
  */
-extern void udp_header(char const *buffer, size_t bufflen);
+extern void ts_udp_header(char const *buffer, size_t bufflen);
 
 /**
  * Print ipv4 header of a packet.
@@ -57,7 +57,7 @@ extern void udp_header(char const *buffer, size_t bufflen);
  *
  * @sa tcp_header udp_header
  */
-extern void print_ipv4(char const *buffer, size_t buf_flen);
+extern void ts_print_ipv4(char const *buffer, size_t buf_flen);
 
 /**
  * Print ipv6 header of a packet.
@@ -67,7 +67,7 @@ extern void print_ipv4(char const *buffer, size_t buf_flen);
  *
  * @sa tcp_header udp_header
  */
-extern void print_ipv6(char const *buffer, size_t buf_flen);
+extern void ts_print_ipv6(char const *buffer, size_t buf_flen);
 
 /**
  * Print vlan header of a packet.
@@ -77,7 +77,7 @@ extern void print_ipv6(char const *buffer, size_t buf_flen);
  *
  * @sa print_ipv6 print_ipv4
  */
-extern void print_vlan(char const *buffer, size_t buf_flen);
+extern void ts_print_vlan(char const *buffer, size_t buf_flen);
 
 /**
  * Print all headers of packet and data.
@@ -87,6 +87,6 @@ extern void print_vlan(char const *buffer, size_t buf_flen);
  *
  * @sa ip_header
  */
-extern void print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr);
+extern void ts_print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr);
 
 #endif
