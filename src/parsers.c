@@ -80,7 +80,7 @@ parse_src_ipv4(const char *name_key, const char *val_key,
         return false;
     }
     int result = inet_pton(AF_INET, val_key, &(new_filter->src_ipv4));
-    if (result<=0) {
+    if (result <= 0) {
         printf("error: Not in presentation format");
         printf("%s|%s\n",
             val_key, inet_ntoa(new_filter->src_ipv4));
@@ -130,7 +130,7 @@ parse_src_ipv6(const char *name_key, const char *val_key,
         return false;
     }
     int result = inet_pton(AF_INET6, val_key, &(new_filter->src_ipv6));
-    if (result<=0) {
+    if (result <= 0) {
         printf("error: Not in presentation format");
         printf("|%s|\n",val_key);
         strncpy(message, "Error: filter src_ipv6: not in presentation format\n", message_len);
@@ -154,7 +154,7 @@ parse_dst_ipv6(const char *name_key, const char *val_key,
         return false;
     }
     int result = inet_pton(AF_INET6, val_key, &(new_filter->dst_ipv6));
-    if (result<=0) {
+    if (result <= 0) {
         printf("error: Not in presentation format");
         printf("|%s|\n",val_key);
         strncpy(message, "Error: filter dst_ipv6: not in presentation format\n", message_len);

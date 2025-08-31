@@ -34,7 +34,7 @@ print_mac_addr(uint8_t const *addr)
 void
 print_payload(char const *data, size_t size)
 {
-    if (size <=0 )
+    if (size <= 0)
     {
         printf("No payload");
         return;
@@ -77,8 +77,8 @@ tcp_header(char const *buffer, size_t bufflen)
     printf("tcp Header \n");
     printf("Source tcp         :   %u\n", ntohs(tcp_head.th_sport));
     printf("Destination tcp    :   %u\n", ntohs(tcp_head.th_dport));
-    char const *tcp_data = buffer + tcp_head.th_off*IHL_WORD_LEN;
-    size_t message_len = bufflen - tcp_head.th_off*IHL_WORD_LEN;
+    char const *tcp_data = buffer + tcp_head.th_off * IHL_WORD_LEN;
+    size_t message_len = bufflen - tcp_head.th_off * IHL_WORD_LEN;
     printf("tcp payload        :   %ld bytes\n",  message_len);
     print_payload(tcp_data, message_len);
     printf("\n###########################################################");

@@ -117,7 +117,7 @@ delete_filter(char const *buff, struct filter *filters,
     }
 
     /* Move all following at that place. */
-    memmove(&filters[int_num_filter], &filters[int_num_filter+1], (*filters_len - int_num_filter-1)*sizeof(struct filter));
+    memmove(&filters[int_num_filter], &filters[int_num_filter + 1], (*filters_len - int_num_filter - 1) * sizeof(struct filter));
     *filters_len -= 1;
     strncpy(message_send, "Successfully delete \n", message_len);
     return true;
