@@ -40,7 +40,7 @@ do_send(int *fd, char const *const data, size_t sz)
             if (close(*fd) == -1)
                 perror("Error in close connection: ");
             *fd = INVALID_SOCKET;
-            return rc;
+            return -rc;
         }
         written_bytes += rc;
     }
@@ -170,7 +170,7 @@ handle_listen(int* sock_listen, int* sock_client)
     if (fd == -1)
     {
         perror("Failed to accept connection");
-        return EBADF;
+        return -EBADF;
     }
 
     /* Reject if already connected. */
@@ -203,7 +203,7 @@ handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
         close(*sock_sniffer);
         *sock_sniffer = INVALID_SOCKET;
         perror("error in reading recvfrom function\n");
-        return EBADF;
+        return -EBADF;
     }
     data_process(buffer, receive_count, filters, filters_len, snifaddr);
     return 0;
@@ -288,12 +288,12 @@ setup_sockets(struct pollfd *fds,
 
     if ((sock_sniffer = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
         perror("failed to create sniffer socket\n");
-        return errno;
+        return -errno;
     }
     if ((sock_listen = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0) {
         perror("failed to create listen socket\n");
         close(sock_sniffer);
-        return errno;
+        return -errno;
     }
 
 
@@ -303,7 +303,7 @@ setup_sockets(struct pollfd *fds,
         perror("setsockopt(SO_REUSEADDR) failed");
         close(sock_sniffer);
         close(sock_listen);
-        return errno;
+        return -errno;
     }
 
     if ((bind(sock_listen, (struct sockaddr*)&servaddr, sizeof(servaddr))) != 0)
@@ -311,7 +311,7 @@ setup_sockets(struct pollfd *fds,
         perror("socket bind failed...\n");
         close(sock_sniffer);
         close(sock_listen);
-        return errno;
+        return -errno;
     }
 
     if ((listen(sock_listen, 5)) != 0)
@@ -319,7 +319,7 @@ setup_sockets(struct pollfd *fds,
         perror("Listen failed...\n");
         close(sock_sniffer);
         close(sock_listen);
-        return errno;
+        return -errno;
     }
 
     fds[SNIFFER_INDEX].fd = sock_sniffer;
