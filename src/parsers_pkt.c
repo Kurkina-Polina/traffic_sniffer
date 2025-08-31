@@ -7,7 +7,7 @@
  * pointer to the current packet data, that is filling.
  */
 
-#include "dissecters.h"
+#include "parsers_pkt.h"
 #include <string.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
@@ -21,7 +21,7 @@
 
 /* Dissect tcp header and fill packet_data with dst_tcp and src_tcp. */
 void
-dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
+parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct tcphdr tcp_head;
 
@@ -35,7 +35,7 @@ dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect udp header and fill packet_data with dst_udp and src_udp. */
 void
-dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
+parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct udphdr udp_head;
 
@@ -49,7 +49,7 @@ dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect ipv4 header and fill packet_data with dst_ipv4, src_ipv4, ip_protocol. */
 void
-dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
+parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip ip_head;
 
@@ -68,11 +68,11 @@ dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
     switch(ip_head.ip_p)
     {
         case IPPROTO_TCP:
-            dissect_tcp(buffer, bufflen, packet_data);
+            parser_pkt_tcp(buffer, bufflen, packet_data);
             break;
 
         case IPPROTO_UDP:
-            dissect_udp(buffer, bufflen, packet_data);
+            parser_pkt_udp(buffer, bufflen, packet_data);
             break;
 
         default:
@@ -82,7 +82,7 @@ dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect ipv6 header and fill dst_ipv6, src_ipv6, ip_protocol. */
 void
-dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
+parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip6_hdr  ip6_head;
     static const int IP6_HEADER_UNIT_SIZE = 8;
@@ -120,10 +120,10 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
                 break;
             }
             case IPPROTO_TCP:
-                dissect_tcp(buffer, bufflen, packet_data);
+                parser_pkt_tcp(buffer, bufflen, packet_data);
                 return;
             case IPPROTO_UDP:
-                dissect_udp(buffer, bufflen, packet_data);
+                parser_pkt_udp(buffer, bufflen, packet_data);
                 return;
             default:
                 return; /* unknown protocol */
@@ -134,7 +134,7 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 
 /* Dissect vlan header and fill packet_data with vlan_id. */
 void
-dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
+parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     uint16_t vlan_tci;
     uint16_t vlan_id;
@@ -156,15 +156,15 @@ dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
     switch(ntohs(ether_type))
     {
         case ETHERTYPE_IP:
-            dissect_ipv4(buffer, bufflen, packet_data);
+            parser_pkt_ipv4(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_IPV6:
-            dissect_ipv6(buffer, bufflen, packet_data);
+            parser_pkt_ipv6(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_VLAN:
-            dissect_vlan(buffer, bufflen, packet_data);
+            parser_pkt_vlan(buffer, bufflen, packet_data);
             break;
 
         default:
@@ -175,7 +175,7 @@ dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 /* Dissect ether header and fill packet_data with dst_mac, src_mac,
  * interface, ether_type. */
 void
-dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
+parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
 {
     struct ether_header ether_head;
 
@@ -194,15 +194,15 @@ dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, st
     switch (ntohs(ether_head.ether_type))
     {
         case ETHERTYPE_IP:
-            dissect_ipv4(buffer, bufflen, packet_data);
+            parser_pkt_ipv4(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_IPV6:
-            dissect_ipv6(buffer, bufflen, packet_data);
+            parser_pkt_ipv6(buffer, bufflen, packet_data);
             break;
 
         case ETHERTYPE_VLAN:
-            dissect_vlan(buffer, bufflen, packet_data);
+            parser_pkt_vlan(buffer, bufflen, packet_data);
             break;
 
         default:

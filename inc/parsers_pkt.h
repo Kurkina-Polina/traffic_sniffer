@@ -7,8 +7,8 @@
  * pointer to the current packet data, that is filling.
  */
 
-#ifndef DISSECTERS_h
-#define DISSECTERS_h
+#ifndef PARSERS_PKTh
+#define PARSERS_PKTh
 #include "filter.h"
 #include "definitions.h"
 #include <linux/if_packet.h>
@@ -21,7 +21,7 @@
  * @param packet_data          data of a packet
  *
  */
-extern void dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -32,7 +32,7 @@ extern void dissect_tcp(char const *buffer, size_t bufflen, struct filter *packe
  * @param packet_data          data of a packet
  *
  */
-extern void dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -43,7 +43,7 @@ extern void dissect_udp(char const *buffer, size_t bufflen, struct filter *packe
  * @param packet_data          data of a packet
  *
  */
-extern void dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -54,7 +54,7 @@ extern void dissect_ipv4(char const *buffer, size_t bufflen, struct filter *pack
  * @param packet_data          data of a packet
  *
  */
-extern void dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -65,7 +65,7 @@ extern void dissect_ipv6(char const *buffer, size_t bufflen, struct filter *pack
  * @param packet_data          data of a packet
  *
  */
-extern void dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
+extern void parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data);
 
 
 /**
@@ -77,5 +77,5 @@ extern void dissect_vlan(char const *buffer, size_t bufflen, struct filter *pack
  * @param packet_data          data of a packet
  *
  */
-extern void dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr);
+extern void parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr);
 #endif

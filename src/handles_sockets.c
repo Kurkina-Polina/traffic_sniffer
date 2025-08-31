@@ -10,7 +10,7 @@
 #include "handles_sockets.h"
 #include "checkers.h"
 #include "handles_user_input.h"
-#include "dissecters.h"
+#include "parsers_pkt.h"
 #include "printers.h"
 #include "get_help.h"
 #include <errno.h>
@@ -91,7 +91,7 @@ data_process(char const *buffer, size_t bufflen,
 {
     /* Unpacking packet to filter structure for simple comparing. */
     struct filter packet_data = {0};
-    dissect_ether(buffer, bufflen, &packet_data, sniffaddr);
+    parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     /* Compare with each filter. */
     for (size_t i = 0; i < filters_len; i++)
