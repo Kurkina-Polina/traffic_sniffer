@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /* Copyright (C) 2022 OKTET Labs Ltd. All rights reserved. */
 /** @file
- * @brief Dissecters headers.
+ * @brief Parsers headers.
  *
  * Input: pointer to start of header, size of all remaining headers and payload,
  * pointer to the current packet data, that is filling.
@@ -19,7 +19,7 @@
 #include <netinet/udp.h>
 #include <stdio.h>
 
-/* Dissect tcp header and fill packet_data with dst_tcp and src_tcp. */
+/* Parse tcp header and fill packet_data with dst_tcp and src_tcp. */
 void
 ts_parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -33,7 +33,7 @@ ts_parser_pkt_tcp(char const *buffer, size_t bufflen, struct filter *packet_data
     packet_data->src_tcp = tcp_head.th_sport;
 }
 
-/* Dissect udp header and fill packet_data with dst_udp and src_udp. */
+/* Parse udp header and fill packet_data with dst_udp and src_udp. */
 void
 ts_parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -47,7 +47,7 @@ ts_parser_pkt_udp(char const *buffer, size_t bufflen, struct filter *packet_data
     packet_data->dst_udp = udp_head.uh_dport;
 }
 
-/* Dissect ipv4 header and fill packet_data with dst_ipv4, src_ipv4, ip_protocol. */
+/* Parse ipv4 header and fill packet_data with dst_ipv4, src_ipv4, ip_protocol. */
 void
 ts_parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -80,7 +80,7 @@ ts_parser_pkt_ipv4(char const *buffer, size_t bufflen, struct filter *packet_dat
     }
 }
 
-/* Dissect ipv6 header and fill dst_ipv6, src_ipv6, ip_protocol. */
+/* Parse ipv6 header and fill dst_ipv6, src_ipv6, ip_protocol. */
 void
 ts_parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -134,7 +134,7 @@ ts_parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_dat
     }
 }
 
-/* Dissect vlan header and fill packet_data with vlan_id. */
+/* Parse vlan header and fill packet_data with vlan_id. */
 void
 ts_parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
@@ -174,7 +174,7 @@ ts_parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_dat
     }
 }
 
-/* Dissect ether header and fill packet_data with dst_mac, src_mac,
+/* Parse ether header and fill packet_data with dst_mac, src_mac,
  * interface, ether_type. */
 void
 ts_parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
