@@ -9,7 +9,7 @@
 #include "handles_user_input.h"
 #include "filter.h"
 #include "definitions.h"
-#include "parsers.h"
+#include "parsers_str.h"
 #include "handles_sockets.h"
 #include <stdlib.h>
 #include <string.h>
@@ -47,9 +47,9 @@ add_filter(char *buff, struct filter *filters,
     size_t *filters_len, char *message, size_t message_sz)
 {
     static filter_param_setter* const array_parsers[] = {
-        parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
-        parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp,
-        parse_interface, parse_dst_ipv6, parse_src_ipv6, parse_vlan_id,
+        parse_str_dst_mac, parse_str_src_mac, parse_str_dst_ipv4, parse_str_src_ipv4, parse_str_ip_protocol,
+        parse_str_ether_type, parse_str_src_tcp, parse_str_dst_tcp, parse_str_src_udp, parse_str_dst_udp,
+        parse_str_interface, parse_str_dst_ipv6, parse_str_src_ipv6, parse_str_vlan_id,
     };
     struct filter new_filter = {0}; /* structure for new filter */
     static struct filter const empty_filter = {0}; /* structure for check if new_filter is empty */
