@@ -13,7 +13,7 @@
 #include "filter.h"
 
 /*  Function type for parsing and setting filter parameters. */
-typedef bool(filter_param_setter)(const char *name_key, const char *val_key,
+typedef bool(ts_filter_param_setter)(const char *name_key, const char *val_key,
     struct filter *new_filter, char *message, size_t message_len);
 
 /**

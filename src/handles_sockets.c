@@ -68,7 +68,7 @@ sig_handler(int unused)
  * @return                     true if suit, false if not suit
  *
  */
-static bool check_filter_match(const struct filter packet_data, const struct filter cur_filter)
+static bool check_filter_match(const struct filter packet_data, const struct filter* const cur_filter)
 {
     static filter_param_compare* const array_checks[]= {
         ts_check_dst_mac, ts_check_src_mac, ts_check_dst_ipv4, ts_check_src_ipv4, ts_check_ip_protocol,
@@ -77,7 +77,7 @@ static bool check_filter_match(const struct filter packet_data, const struct fil
     };
 
     for (size_t j = 0; j < ARRAY_SIZE(array_checks); j++){
-        if (!array_checks[j](&packet_data, &cur_filter))
+        if (!array_checks[j](&packet_data, cur_filter))
             return false;
     }
     return true;
@@ -93,13 +93,36 @@ ts_data_process(char const *buffer, size_t bufflen,
     struct filter packet_data = {0};
     struct ts_node *cur_filter_node; /* filter for cycle */
 
+    /* If no filters, do not parse packet*/
+    if (*filter_list == NULL)
+        return;
     ts_parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
+
+#if 1
+    //FIXME:
+    //*****************************************
+    size_t i = 0;
+    struct filter* data = &(*filter_list)->data; //FIXME: better name
+    for(struct ts_node** node = filter_list; node != NULL;  data = ts_get_data_next(node)) {
+        if (check_filter_match(packet_data, data))
+        {
+            data->count_packets += 1;
+            data->size += bufflen;
+            DPRINTF("SUITABLE +1 packet on filter %zu: %ld\n\n",
+                    i, data->count_packets);
+        }
+        else
+            DPRINTF("NOT SUITABLE on filter %ld\n\n", i);
+        i++;
+    }
+    //*****************************************
+#endif
 
     /* Compare with each filter. */
     for (size_t i = 0; i < filters_len; i++)
     {
         cur_filter_node = ts_get_node_position(filter_list, i);
-        if (check_filter_match(packet_data, cur_filter_node->data))
+        if (check_filter_match(packet_data, &cur_filter_node->data))
         {
             cur_filter_node->data.count_packets += 1;
             cur_filter_node->data.size += bufflen;
@@ -119,7 +142,8 @@ ts_handle_client_event(int *const sock_client,
     struct ts_node **filter_list,  size_t *filters_len)
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
-    static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
+    //FIXME: remove this message_send and just send data
+    static char message_send[BUFFER_SIZE]; /* will be sent to client as result */
     ssize_t const rc = read(*sock_client, rx_buffer, sizeof(rx_buffer));
 
     if (rc <= 0)
@@ -137,10 +161,10 @@ ts_handle_client_event(int *const sock_client,
     /* Process command from client. */
     if (strncmp(CMD_ADD, rx_buffer, sizeof(CMD_ADD) - 1) == 0)
         ts_add_filter(rx_buffer, filter_list, filters_len,
-            message_send, BUFFER_SIZE);
+            sock_client);
 
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
-        ts_delete_filter(rx_buffer, filter_list, filters_len, message_send, BUFFER_SIZE);
+        ts_delete_filter(rx_buffer, filter_list, filters_len, sock_client);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
         ts_send_statistics(filter_list, *filters_len, sock_client);

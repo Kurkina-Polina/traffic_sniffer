@@ -19,13 +19,11 @@
 /* Send message about all statistics. */
 //FIXME: struct ts_node **filter_list cant be const??
 void
-ts_send_statistics(struct ts_node **filter_list,
+ts_send_statistics(struct ts_node ** const filter_list,
     size_t filters_len, int *sock_client)
 {
-    static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
-    struct ts_node *cur_node = *filter_list; /* tmp node for cycle */
-
-    memset(message_send, '\0', BUFFER_SIZE);
+    static char message_send[BUFFER_SIZE] = {}; /* will be send to clint as result */
+    struct ts_node const *cur_node = *filter_list; /* tmp node for cycle */
 
     if (filters_len <= 0)
     {
@@ -36,7 +34,6 @@ ts_send_statistics(struct ts_node **filter_list,
 
     for (size_t i = 0; cur_node && i < filters_len; i++)
     {
-        // FIXME:
         snprintf(message_send, sizeof(message_send),
                 "Filter number %zu: packets = %ld, total_size = %ld bytes\n",
                 i + 1,
@@ -51,9 +48,9 @@ ts_send_statistics(struct ts_node **filter_list,
 /* Splits the string into tokens and every token compare with keys. */
 bool
 ts_add_filter(char *buff, struct ts_node **filter_list,
-    size_t *filters_len, char *message, size_t message_sz)
+    size_t *filters_len, int *sock_client)
 {
-    static filter_param_setter* const array_parsers[] = {
+    static ts_filter_param_setter* const array_parsers[] = {
         ts_parse_str_dst_mac, ts_parse_str_src_mac, ts_parse_str_dst_ipv4, ts_parse_str_src_ipv4, ts_parse_str_ip_protocol,
         ts_parse_str_ether_type, ts_parse_str_src_tcp, ts_parse_str_dst_tcp, ts_parse_str_src_udp, ts_parse_str_dst_udp,
         ts_parse_str_interface, ts_parse_str_dst_ipv6, ts_parse_str_src_ipv6, ts_parse_str_vlan_id,
@@ -62,6 +59,7 @@ ts_add_filter(char *buff, struct ts_node **filter_list,
     static struct filter const empty_filter = {0}; /* structure for check if new_filter is empty */
     char *name_key; /* name of key */
     char *val_key; /* value of key */
+    char message_send[BUFFER_SIZE] = {}; /* will be send to clint as result */
 
 
     buff[strcspn(buff, "\r\n")] = '\0';
@@ -70,7 +68,8 @@ ts_add_filter(char *buff, struct ts_node **filter_list,
     name_key = strtok(buff + sizeof(CMD_ADD) - 1, " ");
     if (!name_key)
     {
-        strncpy(message, "Error: No filter parameters\n", message_sz);
+        snprintf(message_send, sizeof(message_send),  "Error: No filter parameters\n");
+        ts_do_send(sock_client, message_send, strlen(message_send));
         return false;
     }
 
@@ -78,40 +77,48 @@ ts_add_filter(char *buff, struct ts_node **filter_list,
     {
         val_key = strtok(NULL, " ");
         if (!val_key) {
-            strncpy(message, "Error: No filter\n", message_sz);
+            snprintf(message_send, sizeof(message_send),  "Error: No filter\n");
+            ts_do_send(sock_client, message_send, strlen(message_send));
             return false;
         }
         DPRINTF("name_key |%s| val_key |%s| \n", name_key, val_key);
         for (size_t i = 0; i < ARRAY_SIZE(array_parsers); i++)
         {
-            if(!array_parsers[i](name_key, val_key, &new_filter, message, message_sz))
+            if(!array_parsers[i](name_key, val_key, &new_filter, message_send, sizeof(message_send)))
+            {
+                ts_do_send(sock_client, message_send, strlen(message_send));
                 return false;
+            }
         }
         name_key = strtok(NULL, " ");
     }
     /* If new filter correctly added and it is not empty. */
     if (memcmp(&new_filter, &empty_filter, sizeof(new_filter)) != 0) {
-        strncpy(message, "success\n", message_sz);
+        snprintf(message_send, sizeof(message_send),  "Success\n");
+        ts_do_send(sock_client, message_send, strlen(message_send));
         ts_add_end_node(filter_list, new_filter);
         *filters_len += 1;
         return true;
     }
-    strncpy(message, "unknown key\n", message_sz);
+    snprintf(message_send, sizeof(message_send),  "Uknown key\n");
+    ts_do_send(sock_client, message_send, strlen(message_send));
     return false;
 }
 
 /* Delete filter by a number. Number of filter is taken from buffer. */
 bool
 ts_delete_filter(char const *buff, struct ts_node **filter_list,
-              size_t *filters_len, char* message_send, size_t message_len)
+              size_t *filters_len, int *sock_client)
 {
     /* Find number of filter in buffer. */
     char const *num_filter = buff + sizeof(CMD_DEL) - 1;
     int int_num_filter; /* int number of filter */
+    char message_send[BUFFER_SIZE] = {}; /* will be send to clint as result */
 
     if (!num_filter)
     {
-        strncpy(message_send, "Error: No number of filter \n", message_len);
+        snprintf(message_send, sizeof(message_send),  "Error: No number of filter \n");
+        ts_do_send(sock_client, message_send, strlen(message_send));
         return false;
     }
 
@@ -120,13 +127,15 @@ ts_delete_filter(char const *buff, struct ts_node **filter_list,
     if (int_num_filter < 0 || (size_t)int_num_filter >= *filters_len)
     {
         DPRINTF("len %ld number %d \n", *filters_len, int_num_filter);
-        strncpy(message_send, "Error: Invalid number of filter \n", message_len);
+        snprintf(message_send, sizeof(message_send),  "Error: Invalid number of filter \n");
+        ts_do_send(sock_client, message_send, strlen(message_send));
         return false;
     }
 
     /* Move all following at that place. */
     ts_delete_position_node(filter_list, int_num_filter);
     *filters_len -= 1;
-    strncpy(message_send, "Successfully delete \n", message_len);
+    snprintf(message_send, sizeof(message_send),  "Successfully delete \n");
+    ts_do_send(sock_client, message_send, strlen(message_send));
     return true;
 }
