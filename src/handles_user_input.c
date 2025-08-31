@@ -7,14 +7,14 @@
  */
 
 #include "handles_user_input.h"
-
-#include <stdlib.h>
-#include <string.h>
-
 #include "filter.h"
 #include "definitions.h"
 #include "parsers.h"
 #include "handles_sockets.h"
+#include <stdlib.h>
+#include <string.h>
+
+
 
 /* Send message about all statistics. */
 void
@@ -22,6 +22,7 @@ send_statistics(struct filter const *filters,
     size_t filters_len, int *sock_client)
 {
     static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
+
     if (filters_len <= 0)
     {
         snprintf(message_send, sizeof(message_send), "No filters yet\n");
@@ -45,12 +46,6 @@ bool
 add_filter(char *buff, struct filter *filters,
     size_t *filters_len, char *message, size_t message_sz)
 {
-    if (*filters_len >= MAX_FILTERS)
-    {
-        strncpy(message, "Error: limit of filters reached\n", message_sz);
-        return false;
-    }
-
     static filter_param_setter* const array_parsers[] = {
         parse_dst_mac, parse_src_mac, parse_dst_ipv4, parse_src_ipv4, parse_ip_protocol,
         parse_ether_type, parse_src_tcp, parse_dst_tcp, parse_src_udp, parse_dst_udp,
@@ -58,10 +53,19 @@ add_filter(char *buff, struct filter *filters,
     };
     struct filter new_filter = {0}; /* structure for new filter */
     static struct filter const empty_filter = {0}; /* structure for check if new_filter is empty */
+    char *name_key; /* name of key */
+    char *val_key; /* value of key */
+
+    if (*filters_len >= MAX_FILTERS)
+    {
+        strncpy(message, "Error: limit of filters reached\n", message_sz);
+        return false;
+    }
+
     buff[strcspn(buff, "\r\n")] = '\0';
     DPRINTF("buffer |%s|\n", buff);
 
-    char *name_key = strtok(buff + sizeof(CMD_ADD) - 1, " ");
+    name_key = strtok(buff + sizeof(CMD_ADD) - 1, " ");
     if (!name_key)
     {
         strncpy(message, "Error: No filter parameters\n", message_sz);
@@ -70,7 +74,7 @@ add_filter(char *buff, struct filter *filters,
 
     while (name_key != NULL)
     {
-        char *val_key = strtok(NULL, " ");
+        val_key = strtok(NULL, " ");
         if (!val_key) {
             strncpy(message, "Error: No filter\n", message_sz);
             return false;
@@ -101,6 +105,8 @@ delete_filter(char const *buff, struct filter *filters,
 {
     /* Find number of filter in buffer. */
     char const *num_filter = buff + sizeof(CMD_DEL) - 1;
+    int int_num_filter; /* int number of filter */
+
     if (!num_filter)
     {
         strncpy(message_send, "Error: No number of filter \n", message_len);
@@ -108,7 +114,7 @@ delete_filter(char const *buff, struct filter *filters,
     }
 
     /* Convert it to int. */
-    int int_num_filter = atoi(num_filter) - 1;
+    int_num_filter = atoi(num_filter) - 1;
     if (int_num_filter < 0 || (size_t)int_num_filter >= *filters_len)
     {
         DPRINTF("len %ld number %d \n", *filters_len, int_num_filter);

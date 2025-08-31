@@ -24,8 +24,10 @@ void
 dissect_tcp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct tcphdr tcp_head;
+
     if (bufflen < sizeof(tcp_head))
         return;
+
     memcpy(&tcp_head, buffer, sizeof(tcp_head));
     packet_data->dst_tcp = tcp_head.th_dport;
     packet_data->src_tcp = tcp_head.th_sport;
@@ -36,8 +38,10 @@ void
 dissect_udp(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct udphdr udp_head;
+
     if (bufflen < sizeof(udp_head))
         return;
+
     memcpy(&udp_head, buffer, sizeof(udp_head));
     packet_data->src_udp = udp_head.uh_sport;
     packet_data->dst_udp = udp_head.uh_dport;
@@ -48,10 +52,11 @@ void
 dissect_ipv4(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     struct ip ip_head;
+
     if (bufflen < sizeof(ip_head))
         return;
-    memcpy(&ip_head, buffer, sizeof(ip_head));
 
+    memcpy(&ip_head, buffer, sizeof(ip_head));
     packet_data->src_ipv4 = ip_head.ip_src;
     packet_data->dst_ipv4 = ip_head.ip_dst;
     packet_data->ip_protocol = ip_head.ip_p;
@@ -82,6 +87,8 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
     struct ip6_hdr  ip6_head;
     static const int IP6_HEADER_UNIT_SIZE = 8;
     char const *buffer_end = buffer + bufflen;
+    uint8_t next_header; /* next header number */
+    struct ip6_ext ext; /* struct of extension headers */
 
     if (bufflen < sizeof(ip6_head))
         return;
@@ -94,7 +101,7 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
     /* Counting start the next head. */
     buffer += sizeof(struct ip6_hdr);
 
-    uint8_t next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
     while (buffer < buffer_end) {
         switch (next_header) {
             case IPPROTO_HOPOPTS:    /* Hop-by-Hop options */
@@ -106,7 +113,6 @@ dissect_ipv6(char const *buffer, size_t bufflen, struct filter *packet_data)
             {
                 if (buffer + IP6_HEADER_UNIT_SIZE < buffer_end)
                     return;
-                struct ip6_ext ext;
                 memcpy(&ext, buffer, sizeof(struct ip6_ext));
                 next_header = ext.ip6e_nxt;
                 buffer += (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE;
@@ -131,16 +137,18 @@ void
 dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 {
     uint16_t vlan_tci;
+    uint16_t vlan_id;
+    uint16_t ether_type;
+
     if (bufflen < sizeof(vlan_tci))
         return;
     memcpy(&vlan_tci, buffer, sizeof(uint16_t));
     buffer += sizeof(vlan_tci);
 
-    uint16_t vlan_id = ntohs(vlan_tci) & MASK_VLAN_ID;
+    vlan_id = ntohs(vlan_tci) & MASK_VLAN_ID;
     if (packet_data->vlan_id == 0)
         packet_data->vlan_id = vlan_id;
 
-    uint16_t ether_type;
     memcpy(&ether_type, buffer, sizeof(ether_type));
     buffer += sizeof(ether_type); /* counting start the next head */
     bufflen -= (sizeof(ether_type) + sizeof(vlan_tci));
@@ -169,9 +177,10 @@ dissect_vlan(char const *buffer, size_t bufflen, struct filter *packet_data)
 void
 dissect_ether(char const *buffer, size_t bufflen, struct filter *packet_data, struct sockaddr_ll sniffaddr)
 {
+    struct ether_header ether_head;
+
     packet_data->interface = sniffaddr.sll_ifindex;
 
-    struct ether_header ether_head;
     if (bufflen < sizeof(ether_head))
         return;
     memcpy(&ether_head, buffer, sizeof(ether_head));

@@ -29,8 +29,10 @@ int
 do_send(int *fd, char const *const data, size_t sz)
 {
     size_t written_bytes = 0;
+    ssize_t rc; /* returned code by send */
+
     for (; written_bytes != sz;) {
-        ssize_t rc = send(*fd, data + written_bytes,
+        rc = send(*fd, data + written_bytes,
             sz - written_bytes, MSG_DONTWAIT);
         if (rc <= 0)  {
             rc = rc ? errno : ENOTCONN;
@@ -115,8 +117,8 @@ handle_client_event(int *const sock_client,
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
     static char message_send[BUFFER_SIZE]; /* will be send to clint as result */
-
     ssize_t const rc = read(*sock_client, rx_buffer, sizeof(rx_buffer));
+
     if (rc <= 0)
     {
         close(*sock_client);
@@ -161,6 +163,9 @@ handle_listen(int* sock_listen, int* sock_client)
     /* Make new connection with client. */
     socklen_t sock_client_len = sizeof(struct sockaddr_in);
     struct sockaddr_in clientaddr;
+    char const already_busy_message[] = "Failed to accept"
+            " connection since there is already opened one\n";
+
     int fd = accept(*sock_listen, (struct sockaddr*)&clientaddr, &sock_client_len);
     if (fd == -1)
     {
@@ -171,8 +176,6 @@ handle_listen(int* sock_listen, int* sock_client)
     /* Reject if already connected. */
     if (*sock_client != INVALID_SOCKET)
     {
-        char const already_busy_message[] = "Failed to accept"
-            " connection since there is already opened one\n";
         printf("%s", already_busy_message);
         do_send(&fd, already_busy_message, sizeof(already_busy_message));
         if (close(fd) == 0)
@@ -209,11 +212,13 @@ handle_sniffer(int *sock_sniffer, struct filter *filters,  size_t filters_len)
 void
 poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
-    signal(SIGINT, sig_handler); /* Set up SIGINT handler for correct end*/
-
     size_t filters_len = 0;
     struct filter *filters = (struct filter *)malloc(
         sizeof(struct filter) * MAX_FILTERS);
+    int count_poll; /* number of ready file descriptors returned by poll() */
+
+    signal(SIGINT, sig_handler); /* Set up SIGINT handler for correct end*/
+
     if (!filters)
     {
         perror("Error in malloc");
@@ -222,7 +227,7 @@ poll_loop(struct pollfd *fds, size_t const count_sockets)
 
     while (keep_running)
     {
-        int count_poll = poll(fds,  count_sockets, TIMEOUT_MS);
+        count_poll = poll(fds,  count_sockets, TIMEOUT_MS);
         if (count_poll == -1)
         {
             perror("Error in poll :");
@@ -274,7 +279,6 @@ setup_sockets(struct pollfd *fds,
 {
     int sock_sniffer;
     int sock_listen;
-
     /* Server's listening socket address (IP+port for clients to connect). */
     struct sockaddr_in servaddr = {
         .sin_family = AF_INET,

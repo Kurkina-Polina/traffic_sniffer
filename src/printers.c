@@ -34,6 +34,8 @@ print_mac_addr(uint8_t const *addr)
 void
 print_payload(char const *data, size_t size)
 {
+    size_t line_start;
+
     if (size <= 0)
     {
         printf("No payload");
@@ -54,7 +56,7 @@ print_payload(char const *data, size_t size)
 
             printf("  |");
 
-            size_t line_start = i - (i % 16);
+            line_start = i - (i % 16);
             for (size_t j = line_start; j <= i; j++)
             {
                 if (data[j] >= 32 && data[j] <= 126)
@@ -73,12 +75,15 @@ void
 tcp_header(char const *buffer, size_t bufflen)
 {
     struct tcphdr tcp_head;
+    char const *tcp_data;
+    size_t message_len;
+
     memcpy(&tcp_head, buffer, sizeof(struct tcphdr));
     printf("tcp Header \n");
     printf("Source tcp         :   %u\n", ntohs(tcp_head.th_sport));
     printf("Destination tcp    :   %u\n", ntohs(tcp_head.th_dport));
-    char const *tcp_data = buffer + tcp_head.th_off * IHL_WORD_LEN;
-    size_t message_len = bufflen - tcp_head.th_off * IHL_WORD_LEN;
+    tcp_data = buffer + tcp_head.th_off * IHL_WORD_LEN;
+    message_len = bufflen - tcp_head.th_off * IHL_WORD_LEN;
     printf("tcp payload        :   %ld bytes\n",  message_len);
     print_payload(tcp_data, message_len);
     printf("\n###########################################################");
@@ -91,12 +96,15 @@ udp_header(char const *buffer, size_t bufflen)
 {
     static size_t const udp_header_len = 8;
     struct udphdr udp_head;
+    char const *udp_data;
+    size_t message_len;
+
     memcpy(&udp_head, buffer , sizeof(struct udphdr));
     printf("udp Header \n");
     printf("Source udp         :   %u\n", ntohs(udp_head.uh_sport));
     printf("Destination udp    :   %u\n", ntohs(udp_head.uh_dport));
-    char const *udp_data = buffer + udp_header_len;
-    size_t message_len = bufflen - udp_header_len;
+    udp_data = buffer + udp_header_len;
+    message_len = bufflen - udp_header_len;
     printf("udp payload        :   %ld bytes\n",  message_len);
     print_payload(udp_data, message_len);
     printf("\n###########################################################");
@@ -109,6 +117,7 @@ void
 print_ipv4(char const *buffer, size_t bufflen)
 {
     struct ip ip_head;
+
     memcpy(&ip_head, buffer, sizeof(struct ip));
     printf("ip Header\n");
     printf("Version           :    %u\n", ip_head.ip_v);
@@ -143,16 +152,19 @@ print_ipv6(char const *buffer, size_t bufflen)
 {
     static const int IP6_HEADER_UNIT_SIZE = 8;
     struct ip6_hdr  ip6_head;
-    memcpy(&ip6_head, buffer, sizeof(struct ip6_hdr));
     char const *buffer_end = buffer + bufflen;
+    char ipv6_src_addr_string[INET6_ADDRSTRLEN];
+    char ipv6_dst_addr_string[INET6_ADDRSTRLEN];
+    uint8_t next_header;
+    struct ip6_ext ext;
+
+    memcpy(&ip6_head, buffer, sizeof(struct ip6_hdr));
 
     /* Make strings of src and dst ipv6 adresses*/
-    char ipv6_src_addr_string[INET6_ADDRSTRLEN];
     if (inet_ntop(AF_INET6, &ip6_head.ip6_src, ipv6_src_addr_string, INET6_ADDRSTRLEN) == NULL) {
         perror("inet_ntop");
         return;
     }
-    char ipv6_dst_addr_string[INET6_ADDRSTRLEN];
     if (inet_ntop(AF_INET6, &ip6_head.ip6_dst, ipv6_dst_addr_string, INET6_ADDRSTRLEN) == NULL) {
         perror("inet_ntop");
         return;
@@ -166,7 +178,7 @@ print_ipv6(char const *buffer, size_t bufflen)
     /* Counting start the next head. */
     buffer += sizeof(struct ip6_hdr);
 
-    uint8_t next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
+    next_header = ip6_head.ip6_ctlun.ip6_un1.ip6_un1_nxt;
     while (buffer < buffer_end) {
         switch (next_header) {
             case IPPROTO_HOPOPTS:    /* Hop-by-Hop options */
@@ -178,7 +190,6 @@ print_ipv6(char const *buffer, size_t bufflen)
             {
                 if (buffer + IP6_HEADER_UNIT_SIZE < buffer_end)
                     return;
-                struct ip6_ext ext;
                 memcpy(&ext, buffer, sizeof(struct ip6_ext));
                 next_header = ext.ip6e_nxt;
                 buffer += (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE;
@@ -201,16 +212,18 @@ print_ipv6(char const *buffer, size_t bufflen)
 void
 print_vlan(char const *buffer, size_t bufflen){
     uint16_t vlan_tci;
+    uint16_t vlan_id;
+    uint16_t ether_type;
+
     memcpy(&vlan_tci, buffer, sizeof(uint16_t));
 
-    uint16_t vlan_id = ntohs(vlan_tci) & 0x0FFF;
+    vlan_id = ntohs(vlan_tci) & MASK_VLAN_ID;
     printf("VLAN ID: %d\n", vlan_id);
 
     /* Calculating the next header. */
     buffer += sizeof(vlan_tci);
     bufflen -= sizeof(vlan_tci);
 
-    uint16_t ether_type;
     memcpy(&ether_type, buffer, sizeof(uint16_t));
     printf("Ether type        :    0x%04x\n", ntohs(ether_type));
 
@@ -244,6 +257,8 @@ void
 print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
 {
     char ifname[IF_NAMESIZE];
+    struct ether_header ether_head;
+
     errno = 0;
     if (if_indextoname(sniffaddr.sll_ifindex, ifname) == NULL)
     {
@@ -254,7 +269,6 @@ print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffaddr)
     printf("Interface: %s\n", ifname);
     printf("Ethernet Header \n");
 
-    struct ether_header ether_head;
     memcpy(&ether_head, buffer, sizeof(ether_head));
     printf("Destination MAC   :    ");
     print_mac_addr(ether_head.ether_dhost);
