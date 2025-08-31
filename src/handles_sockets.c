@@ -87,51 +87,33 @@ static bool check_filter_match(const struct filter packet_data, const struct fil
 /* Parse packet and then compare for each filter.*/
 void
 ts_data_process(char const *buffer, size_t bufflen,
-    struct ts_node **filter_list, size_t filters_len, struct sockaddr_ll sniffaddr)
+    struct filter **filter_list, struct sockaddr_ll sniffaddr)
 {
     /* Unpacking packet to filter structure for simple comparing. */
     struct filter packet_data = {0};
-    struct ts_node *cur_filter_node; /* filter for cycle */
+    size_t num_filter = 0; /* number of filter */
+    struct filter* node = *filter_list;
 
     /* If no filters, do not parse packet*/
     if (*filter_list == NULL)
         return;
     ts_parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
 
-#if 1
-    //FIXME:
-    //*****************************************
-    size_t i = 0;
-    struct filter* data = &(*filter_list)->data; //FIXME: better name
-    for(struct ts_node** node = filter_list; node != NULL;  data = ts_get_data_next(node)) {
-        if (check_filter_match(packet_data, data))
-        {
-            data->count_packets += 1;
-            data->size += bufflen;
-            DPRINTF("SUITABLE +1 packet on filter %zu: %ld\n\n",
-                    i, data->count_packets);
-        }
-        else
-            DPRINTF("NOT SUITABLE on filter %ld\n\n", i);
-        i++;
-    }
-    //*****************************************
-#endif
-
     /* Compare with each filter. */
-    for (size_t i = 0; i < filters_len; i++)
+    for(; node != NULL;  node = ts_get_data_next(node))
     {
-        cur_filter_node = ts_get_node_position(filter_list, i);
-        if (check_filter_match(packet_data, &cur_filter_node->data))
+        if (check_filter_match(packet_data, node))
         {
-            cur_filter_node->data.count_packets += 1;
-            cur_filter_node->data.size += bufflen;
-            DPRINTF("SUITABLE  +1 packet on filter %zu: %ld\n\n",
-                i, cur_filter_node->data.count_packets);
+            node->count_packets += 1;
+            node->size += bufflen;
+            DPRINTF("SUITABLE +1 packet on filter %zu: %ld\n\n",
+                num_filter, node->count_packets);
         }
         else
-            DPRINTF("NOT SUITABLE on filter %ld\n\n", i);
+            DPRINTF("NOT SUITABLE on filter %ld\n\n", num_filter);
+        num_filter++;
     }
+
     ts_print_packet(buffer, bufflen, sniffaddr);
 }
 
@@ -139,7 +121,7 @@ ts_data_process(char const *buffer, size_t bufflen,
 /* Receive a packet on sock_client and calls a function by any command. */
 void
 ts_handle_client_event(int *const sock_client,
-    struct ts_node **filter_list,  size_t *filters_len)
+    struct filter **filter_list,  size_t *filters_len)
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
     //FIXME: remove this message_send and just send data
@@ -218,7 +200,7 @@ ts_handle_listen(int* sock_listen, int* sock_client)
 /* Receive a packet from socket and
 pass the packet to data_process for unpacking. */
 int
-ts_handle_sniffer(int *sock_sniffer, struct ts_node **filter_list,  size_t filters_len)
+ts_handle_sniffer(int *sock_sniffer, struct filter **filter_list)
 {
     static char buffer[BUFFER_SIZE]; /* buffer that will contain a full packet*/
     struct sockaddr_ll snifaddr = {0}; /* it will contain a vlan */
@@ -233,7 +215,7 @@ ts_handle_sniffer(int *sock_sniffer, struct ts_node **filter_list,  size_t filte
         perror("error in reading recvfrom function\n");
         return -EBADF;
     }
-    ts_data_process(buffer, receive_count, filter_list, filters_len, snifaddr);
+    ts_data_process(buffer, receive_count, filter_list, snifaddr);
     return 0;
 }
 
@@ -241,7 +223,7 @@ void
 ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
     size_t filters_len = 0;
-    struct ts_node *filter_list = NULL; /* linked list of filters */
+    struct filter *filter_list = NULL; /* linked list of filters */
     int count_poll; /* number of ready file descriptors returned by poll() */
 
     signal(SIGINT, sig_handler); /* Set up SIGINT handler for correct end*/
@@ -260,7 +242,7 @@ ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 
         if (fds[SNIFFER_INDEX].revents & POLL_IN)
         {
-            if(ts_handle_sniffer(&fds[SNIFFER_INDEX].fd, &filter_list, filters_len) != 0)
+            if(ts_handle_sniffer(&fds[SNIFFER_INDEX].fd, &filter_list) != 0)
                 goto on_fail;
         }
 

@@ -52,7 +52,7 @@ extern int ts_do_send(int *fd, char const *const data, size_t sz);
  *                            check_interface check_src_ipv6 check_dst_ipv6
  */
 extern void ts_data_process(char const *buffer, size_t bufflen,
-    struct ts_node **filter_list, size_t filters_len, struct sockaddr_ll sniffaddr);
+    struct filter **filter_list,  struct sockaddr_ll sniffaddr);
 
 
 /**
@@ -66,7 +66,7 @@ extern void ts_data_process(char const *buffer, size_t bufflen,
  *
  */
 extern void ts_handle_client_event(int *const sock_client,
-    struct ts_node **filter_list,  size_t *filters_len);
+    struct filter **filter_list,  size_t *filters_len);
 
 
 /**
@@ -94,7 +94,7 @@ extern int ts_handle_listen(int* sock_listen, int* sock_client);
  * @return                     errno
  */
 extern int ts_handle_sniffer(int *sock_sniffer,
-    struct ts_node **filter_list,  size_t filters_len);
+    struct filter **filter_list);
 
 
 /**

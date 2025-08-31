@@ -23,7 +23,7 @@
  * @param sock_client              socket client where we send message
  *
  */
-extern void ts_send_statistics(struct ts_node **filter_list,
+extern void ts_send_statistics(struct filter **filter_list,
     size_t filters_len, int *sock_client);
 
 
@@ -42,7 +42,7 @@ extern void ts_send_statistics(struct ts_node **filter_list,
  * @return                        true if success, false if fail
  *
  */
-extern bool ts_add_filter(char *buff, struct ts_node **filter_list,  size_t *filters_len,
+extern bool ts_add_filter(char *buff, struct filter **filter_list,  size_t *filters_len,
     int *sock_client);
 
 /**
@@ -57,7 +57,7 @@ extern bool ts_add_filter(char *buff, struct ts_node **filter_list,  size_t *fil
  * @return bool                   true if success and false if fail
  *
  */
-extern bool ts_delete_filter(char const *buff, struct ts_node **filter_list,  size_t *filters_len,
+extern bool ts_delete_filter(char const *buff, struct filter **filter_list,  size_t *filters_len,
     int *sock_client);
 
 #endif

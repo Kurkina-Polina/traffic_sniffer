@@ -19,11 +19,12 @@
 /* Send message about all statistics. */
 //FIXME: struct ts_node **filter_list cant be const??
 void
-ts_send_statistics(struct ts_node ** const filter_list,
+ts_send_statistics(struct filter ** const filter_list,
     size_t filters_len, int *sock_client)
 {
     static char message_send[BUFFER_SIZE] = {}; /* will be send to clint as result */
-    struct ts_node const *cur_node = *filter_list; /* tmp node for cycle */
+    struct filter *cur_filter = *filter_list; /* tmp filter for cycle */
+    size_t number_filter = 0;
 
     if (filters_len <= 0)
     {
@@ -32,22 +33,22 @@ ts_send_statistics(struct ts_node ** const filter_list,
         return;
     }
 
-    for (size_t i = 0; cur_node && i < filters_len; i++)
+    for(; cur_filter != NULL;  cur_filter = ts_get_data_next(cur_filter))
     {
         snprintf(message_send, sizeof(message_send),
                 "Filter number %zu: packets = %ld, total_size = %ld bytes\n",
-                i + 1,
-                cur_node->data.count_packets,
-                cur_node->data.size);
+                number_filter + 1,
+                cur_filter->count_packets,
+                cur_filter->size);
 
         ts_do_send(sock_client, message_send, strlen(message_send));
-        cur_node = cur_node->next;
+        number_filter++;
     }
 }
 
 /* Splits the string into tokens and every token compare with keys. */
 bool
-ts_add_filter(char *buff, struct ts_node **filter_list,
+ts_add_filter(char *buff, struct filter **filter_list,
     size_t *filters_len, int *sock_client)
 {
     static ts_filter_param_setter* const array_parsers[] = {
@@ -96,7 +97,7 @@ ts_add_filter(char *buff, struct ts_node **filter_list,
     if (memcmp(&new_filter, &empty_filter, sizeof(new_filter)) != 0) {
         snprintf(message_send, sizeof(message_send),  "Success\n");
         ts_do_send(sock_client, message_send, strlen(message_send));
-        ts_add_end_node(filter_list, new_filter);
+        ts_add_end_node(filter_list, &new_filter);
         *filters_len += 1;
         return true;
     }
@@ -107,7 +108,7 @@ ts_add_filter(char *buff, struct ts_node **filter_list,
 
 /* Delete filter by a number. Number of filter is taken from buffer. */
 bool
-ts_delete_filter(char const *buff, struct ts_node **filter_list,
+ts_delete_filter(char const *buff, struct filter **filter_list,
               size_t *filters_len, int *sock_client)
 {
     /* Find number of filter in buffer. */
