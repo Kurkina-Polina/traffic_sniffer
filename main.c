@@ -88,6 +88,6 @@ main(int argc, char *argv[])
     if (ts_setup_sockets(fds, port_server, ip_server.s_addr) != 0)
         return EXIT_FAILURE;
 
-        ts_poll_loop(fds, ARRAY_SIZE(fds));
+    ts_poll_loop(fds, ARRAY_SIZE(fds));
     return 0;
 }

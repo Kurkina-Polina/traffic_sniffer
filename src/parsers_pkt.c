@@ -119,18 +119,20 @@ ts_parser_pkt_ipv6(char const *buffer, size_t bufflen, struct filter *packet_dat
                 bufflen -= (ext.ip6e_len + 1) * IP6_HEADER_UNIT_SIZE;
                 break;
             }
+
             case IPPROTO_TCP:
                 ts_parser_pkt_tcp(buffer, bufflen, packet_data);
                 return;
+
             case IPPROTO_UDP:
                 ts_parser_pkt_udp(buffer, bufflen, packet_data);
                 return;
+
             default:
                 return; /* unknown protocol */
         }
     }
 }
-
 
 /* Dissect vlan header and fill packet_data with vlan_id. */
 void
@@ -146,8 +148,7 @@ ts_parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_dat
     buffer += sizeof(vlan_tci);
 
     vlan_id = ntohs(vlan_tci) & MASK_VLAN_ID;
-    if (packet_data->vlan_id == 0)
-        packet_data->vlan_id = vlan_id;
+    packet_data->vlan_id = vlan_id;
 
     memcpy(&ether_type, buffer, sizeof(ether_type));
     buffer += sizeof(ether_type); /* counting start the next head */
@@ -163,6 +164,7 @@ ts_parser_pkt_vlan(char const *buffer, size_t bufflen, struct filter *packet_dat
             ts_parser_pkt_ipv6(buffer, bufflen, packet_data);
             break;
 
+        case ETHERTYPE_VLAN_8021AD:
         case ETHERTYPE_VLAN:
             ts_parser_pkt_vlan(buffer, bufflen, packet_data);
             break;
@@ -201,6 +203,7 @@ ts_parser_pkt_ether(char const *buffer, size_t bufflen, struct filter *packet_da
             ts_parser_pkt_ipv6(buffer, bufflen, packet_data);
             break;
 
+        case ETHERTYPE_VLAN_8021AD:
         case ETHERTYPE_VLAN:
             ts_parser_pkt_vlan(buffer, bufflen, packet_data);
             break;

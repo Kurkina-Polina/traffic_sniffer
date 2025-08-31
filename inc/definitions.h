@@ -21,6 +21,9 @@
 /* Mask for vlan_id from vlan_tci. */
 #define MASK_VLAN_ID 0x0FFF
 
+/* IEEE 802.1ad Provider Bridging (Q-in-Q) */
+#define ETHERTYPE_VLAN_8021AD 0x88A8
+
 /* Control commands for intaction. */
 #define CMD_ADD "add"       /* add new filter */
 #define CMD_DEL "del"       /* delete filter */

@@ -240,7 +240,7 @@ ts_print_vlan(char const *buffer, size_t bufflen){
         case ETHERTYPE_IPV6:
             ts_print_ipv6(buffer, bufflen);
             break;
-
+        case ETHERTYPE_VLAN_8021AD:
         case ETHERTYPE_VLAN:
             ts_print_vlan(buffer, bufflen);
             break;
@@ -289,7 +289,7 @@ ts_print_packet(char const *buffer, size_t bufflen,  struct sockaddr_ll sniffadd
         case ETHERTYPE_IPV6:
             ts_print_ipv6(buffer, bufflen);
             break;
-
+        case ETHERTYPE_VLAN_8021AD:
         case ETHERTYPE_VLAN:
             printf("TPID              :    0x%04x\n", ntohs(ether_head.ether_type));
             ts_print_vlan(buffer, bufflen);
