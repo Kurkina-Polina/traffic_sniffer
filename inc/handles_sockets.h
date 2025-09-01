@@ -43,7 +43,7 @@ extern int ts_do_send(int *fd, char const *const data, size_t sz);
  * @param buffer              full buffer, received from client
  * @param bufflen             size of buffer
  * @param filters             all setted filters
- * @param filters_len         count of setted filters
+ * @param sniffaddr           struct of sniffer addr for extract interface
  *
  * @sa                        check_src_mac check_src_ipv4 check_dst_mac
  *                            check_dst_ipv4 check_ip_protocol

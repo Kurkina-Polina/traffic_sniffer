@@ -14,10 +14,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/*  Function type for comparing parameters. */
-typedef bool(filter_param_compare)(const struct filter *packet_data, const struct filter *cur_filter);
-
-
 /**
  * Compare sourse mac addresses.
  *

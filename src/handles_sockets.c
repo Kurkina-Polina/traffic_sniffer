@@ -21,6 +21,9 @@
 #include <unistd.h>
 #include <signal.h>
 
+/*  Function type for comparing parameters. */
+typedef bool(ts_filter_param_compare_fun)(const struct filter *packet_data, const struct filter *cur_filter);
+
 /* Flag for end program. */
 static volatile bool keep_running = 1;
 
@@ -35,12 +38,12 @@ ts_do_send(int *fd, char const *const data, size_t sz)
         rc = send(*fd, data + written_bytes,
             sz - written_bytes, MSG_DONTWAIT);
         if (rc <= 0)  {
-            rc = rc ? errno : ENOTCONN;
+            rc = rc ? -errno : -ENOTCONN;
             printf("Failed to send data: %s\n", strerror(rc));
             if (close(*fd) == -1)
                 perror("Error in close connection: ");
             *fd = INVALID_SOCKET;
-            return -rc;
+            return rc;
         }
         written_bytes += rc;
     }
@@ -70,7 +73,7 @@ sig_handler(int unused)
  */
 static bool check_filter_match(const struct filter packet_data, const struct filter* const cur_filter)
 {
-    static filter_param_compare* const array_checks[]= {
+    static ts_filter_param_compare_fun* const array_checks[]= {
         ts_check_dst_mac, ts_check_src_mac, ts_check_dst_ipv4, ts_check_src_ipv4, ts_check_ip_protocol,
         ts_check_ether_type, ts_check_src_tcp, ts_check_dst_tcp, ts_check_src_udp, ts_check_dst_udp, ts_check_vlan_id,
         ts_check_interface, ts_check_dst_ipv6, ts_check_src_ipv6,
@@ -97,6 +100,7 @@ ts_data_process(char const *buffer, size_t bufflen,
     /* If no filters, do not parse packet*/
     if (*filter_list == NULL)
         return;
+
     ts_parser_pkt_ether(buffer, bufflen, &packet_data, sniffaddr);
 
     /* Compare with each filter. */

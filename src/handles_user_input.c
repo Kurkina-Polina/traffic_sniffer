@@ -14,7 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+/*  Function type for parsing and setting filter parameters. */
+typedef bool(ts_filter_param_setter_fun)(const char *name_key, const char *val_key,
+    struct filter *new_filter, char *message, size_t message_len);
 
 /* Send message about all statistics. */
 void
@@ -48,7 +50,7 @@ ts_send_statistics(struct filter ** const filter_list, int *sock_client)
 bool
 ts_add_filter(char *buff, struct filter **filter_list, int *sock_client)
 {
-    static ts_filter_param_setter* const array_parsers[] = {
+    static ts_filter_param_setter_fun* const array_parsers[] = {
         ts_parse_str_dst_mac, ts_parse_str_src_mac, ts_parse_str_dst_ipv4, ts_parse_str_src_ipv4, ts_parse_str_ip_protocol,
         ts_parse_str_ether_type, ts_parse_str_src_tcp, ts_parse_str_dst_tcp, ts_parse_str_src_udp, ts_parse_str_dst_udp,
         ts_parse_str_interface, ts_parse_str_dst_ipv6, ts_parse_str_src_ipv6, ts_parse_str_vlan_id,

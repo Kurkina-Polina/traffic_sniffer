@@ -45,13 +45,13 @@ src_ipv4 - source IPv4
 
 dst_ipv4 - destination IPv4
 
+src_ipv6 - source IPv6
+
+dst_ipv6 - destination IPv6
+
 ip_protocol - IP protocol
 
 src_tcp/dst_tcp - TCP port
 
 src_udp/dst_udp - UDP port
-
-## Current Limitations
-
-Maximum of 10 active filters
 
