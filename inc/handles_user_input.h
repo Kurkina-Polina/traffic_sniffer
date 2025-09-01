@@ -19,12 +19,10 @@
  * Send message about all statistics.
  *
  * @param filters                  all setted filters
- * @param filters_len              count of setted filters
  * @param sock_client              socket client where we send message
  *
  */
-extern void ts_send_statistics(struct filter **filter_list,
-    size_t filters_len, int *sock_client);
+extern void ts_send_statistics(struct filter **filter_list, int *sock_client);
 
 
 /**
@@ -36,14 +34,12 @@ extern void ts_send_statistics(struct filter **filter_list,
  *
  * @param buff                    string contain full ethernet packet
  * @param filter_list[out][in]    linked list of filters, that will be modified
- * @param filters_len[out][in]    filters len, that will be modified
- * @param sock_client              socket client where we send message
+ * @param sock_client             socket client where we send message
  *
  * @return                        true if success, false if fail
  *
  */
-extern bool ts_add_filter(char *buff, struct filter **filter_list,  size_t *filters_len,
-    int *sock_client);
+extern bool ts_add_filter(char *buff, struct filter **filter_list, int *sock_client);
 
 /**
  * Delete filter by a number. Number of filter is taken from buffer.
@@ -51,13 +47,12 @@ extern bool ts_add_filter(char *buff, struct filter **filter_list,  size_t *filt
  *
  * @param buff                    string contain message with command and argument
  * @param filters[out][in]        array of filters, that will be modified
- * @param filters_len[out][in]    filters len, that will be modified
  * @param sock_client              socket client where we send message
  *
  * @return bool                   true if success and false if fail
  *
  */
-extern bool ts_delete_filter(char const *buff, struct filter **filter_list,  size_t *filters_len,
+extern bool ts_delete_filter(char const *buff, struct filter **filter_list,
     int *sock_client);
 
 #endif

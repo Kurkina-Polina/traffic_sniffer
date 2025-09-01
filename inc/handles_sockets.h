@@ -62,11 +62,10 @@ extern void ts_data_process(char const *buffer, size_t bufflen,
  *
  * @param sock_client          opened socket that receive info
  * @param filter_list [out]    linken list of all set filters
- * @param filters_len [out]    count of filters set
  *
  */
 extern void ts_handle_client_event(int *const sock_client,
-    struct filter **filter_list,  size_t *filters_len);
+    struct filter **filter_list);
 
 
 /**

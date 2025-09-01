@@ -97,20 +97,19 @@ ts_add_end_node(struct filter **head, struct filter const *new_filter)
 }
 
 /* Delete node by position of list. */
-void
+bool
 ts_delete_position_node(struct filter **head, size_t position)
 {
     struct ts_node *cur_node = get_node_container(*head); /* for cycle */
     struct ts_node *tmp_node; /* deleting node */
 
     if (cur_node == NULL)
-        return;
+        return false;
 
     if (position == 0) {
         ts_delete_first_node(head);
-        return;
+        return true;
     }
-
 
     for (size_t i = 0; cur_node && i < position - 1; i++)
     {
@@ -118,11 +117,12 @@ ts_delete_position_node(struct filter **head, size_t position)
     }
     if (cur_node == NULL || cur_node->next == NULL) {
         printf("Position out of range\n");
-        return;
+        return false;
     }
     tmp_node = cur_node->next;
     cur_node->next = cur_node->next->next;
     free(tmp_node);
+    return true;
 }
 
 /* Free memory occupied by linked list. */

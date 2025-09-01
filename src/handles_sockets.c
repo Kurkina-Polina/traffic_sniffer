@@ -121,7 +121,7 @@ ts_data_process(char const *buffer, size_t bufflen,
 /* Receive a packet on sock_client and calls a function by any command. */
 void
 ts_handle_client_event(int *const sock_client,
-    struct filter **filter_list,  size_t *filters_len)
+    struct filter **filter_list)
 {
     char rx_buffer[BUFFER_SIZE] = {}; /* for client input */
     /* Sending to client in case exit and inlnown key. */
@@ -142,14 +142,14 @@ ts_handle_client_event(int *const sock_client,
 
     /* Process command from client. */
     if (strncmp(CMD_ADD, rx_buffer, sizeof(CMD_ADD) - 1) == 0)
-        ts_add_filter(rx_buffer, filter_list, filters_len,
+        ts_add_filter(rx_buffer, filter_list,
             sock_client);
 
     else if (strncmp(CMD_DEL, rx_buffer, sizeof(CMD_DEL) - 1) == 0)
-        ts_delete_filter(rx_buffer, filter_list, filters_len, sock_client);
+        ts_delete_filter(rx_buffer, filter_list, sock_client);
 
     else if (strncmp(CMD_PRINT, rx_buffer, sizeof(CMD_PRINT) - 1) == 0)
-        ts_send_statistics(filter_list, *filters_len, sock_client);
+        ts_send_statistics(filter_list, sock_client);
 
     else if (strncmp(CMD_EXIT, rx_buffer, sizeof(CMD_EXIT) - 1) == 0)
     {
@@ -220,10 +220,10 @@ ts_handle_sniffer(int *sock_sniffer, struct filter **filter_list)
     return 0;
 }
 
+/* Cycle for poll. */
 void
 ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 {
-    size_t filters_len = 0;
     struct filter *filter_list = NULL; /* linked list of filters */
     int count_poll; /* number of ready file descriptors returned by poll() */
 
@@ -255,7 +255,7 @@ ts_poll_loop(struct pollfd *fds, size_t const count_sockets)
 
         if (fds[CLIENT_INDEX].revents & POLL_IN)
         {
-            ts_handle_client_event(&fds[CLIENT_INDEX].fd, &filter_list, &filters_len);
+            ts_handle_client_event(&fds[CLIENT_INDEX].fd, &filter_list);
         }
 
         if (fds[CLIENT_INDEX].revents & POLLHUP || fds[CLIENT_INDEX].revents & POLLERR)
@@ -276,7 +276,7 @@ on_fail:
     free_list(&filter_list);
 }
 
-
+/* Set up sockets, addresses and structure for poll. */
 int
 ts_setup_sockets(struct pollfd *fds,
     uint16_t port_server, uint32_t ip_server)

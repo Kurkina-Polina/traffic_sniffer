@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /**
  * Add new node to the end of list.
@@ -31,7 +32,7 @@ extern void ts_add_end_node(struct filter **head, const struct filter *new_filte
  * @param position                 position of deleting node
  *
  */
-extern void ts_delete_position_node(struct filter **head, size_t position);
+extern bool ts_delete_position_node(struct filter **head, size_t position);
 
 /**
  * Return the next node of list. Using in cycles.

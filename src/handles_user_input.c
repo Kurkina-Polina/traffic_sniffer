@@ -18,14 +18,13 @@
 
 /* Send message about all statistics. */
 void
-ts_send_statistics(struct filter ** const filter_list,
-    size_t filters_len, int *sock_client)
+ts_send_statistics(struct filter ** const filter_list, int *sock_client)
 {
     static char message_send[BUFFER_SIZE] = {}; /* will be send to clint as result */
     struct filter *cur_filter = *filter_list; /* tmp filter for cycle */
     size_t number_filter = 0;
 
-    if (filters_len <= 0)
+    if (cur_filter == NULL)
     {
         snprintf(message_send, sizeof(message_send), "No filters yet\n");
         ts_do_send(sock_client, message_send, strlen(message_send));
@@ -47,8 +46,7 @@ ts_send_statistics(struct filter ** const filter_list,
 
 /* Splits the string into tokens and every token compare with keys. */
 bool
-ts_add_filter(char *buff, struct filter **filter_list,
-    size_t *filters_len, int *sock_client)
+ts_add_filter(char *buff, struct filter **filter_list, int *sock_client)
 {
     static ts_filter_param_setter* const array_parsers[] = {
         ts_parse_str_dst_mac, ts_parse_str_src_mac, ts_parse_str_dst_ipv4, ts_parse_str_src_ipv4, ts_parse_str_ip_protocol,
@@ -97,7 +95,6 @@ ts_add_filter(char *buff, struct filter **filter_list,
         snprintf(message_send, sizeof(message_send),  "Success\n");
         ts_do_send(sock_client, message_send, strlen(message_send));
         ts_add_end_node(filter_list, &new_filter);
-        *filters_len += 1;
         return true;
     }
     snprintf(message_send, sizeof(message_send),  "Uknown key\n");
@@ -108,7 +105,7 @@ ts_add_filter(char *buff, struct filter **filter_list,
 /* Delete filter by a number. Number of filter is taken from buffer. */
 bool
 ts_delete_filter(char const *buff, struct filter **filter_list,
-              size_t *filters_len, int *sock_client)
+            int *sock_client)
 {
     /* Find number of filter in buffer. */
     char const *num_filter = buff + sizeof(CMD_DEL) - 1;
@@ -124,17 +121,20 @@ ts_delete_filter(char const *buff, struct filter **filter_list,
 
     /* Convert it to int. */
     int_num_filter = atoi(num_filter) - 1;
-    if (int_num_filter < 0 || (size_t)int_num_filter >= *filters_len)
+    if (int_num_filter < 0)
     {
-        DPRINTF("len %ld number %d \n", *filters_len, int_num_filter);
         snprintf(message_send, sizeof(message_send),  "Error: Invalid number of filter \n");
         ts_do_send(sock_client, message_send, strlen(message_send));
         return false;
     }
 
-    /* Move all following at that place. */
-    ts_delete_position_node(filter_list, int_num_filter);
-    *filters_len -= 1;
+    /* Deleting. */
+    if (!ts_delete_position_node(filter_list, int_num_filter))
+    {
+        snprintf(message_send, sizeof(message_send),  "Error: Invalid number of filter \n");
+        ts_do_send(sock_client, message_send, strlen(message_send));
+        return false;
+    }
     snprintf(message_send, sizeof(message_send),  "Successfully delete \n");
     ts_do_send(sock_client, message_send, strlen(message_send));
     return true;
