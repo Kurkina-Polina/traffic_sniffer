@@ -24,7 +24,8 @@ struct ts_node{
  *
  */
 static struct ts_node*
-get_node_container(struct filter *node) {
+get_node_container(struct filter *node)
+{
     /* Checking offset to be sure it is ok. */
     _Static_assert(offsetof(struct ts_node, data) == 0);
     return (struct ts_node*)node;
@@ -71,7 +72,8 @@ create_node(struct filter const *new_filter)
 }
 
 /* Return the next node of list. Using in cycles. */
-struct filter* ts_get_data_next(struct filter *filter) {
+struct filter* ts_get_data_next(struct filter *filter)
+{
     return &get_node_container(filter)->next->data;
 }
 
